@@ -4,6 +4,12 @@
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Non-Blocking I/O Multiplexing, Linux `epoll`, Reactor Pattern, Spring WebFlux.
 
+> **Status:** Implemented
+>
+> **Related code:** `api-gateway/pom.xml`, `api-gateway/src/main/java/com/ecommerce/gateway/ApiGatewayApplication.java`
+>
+> **Last verified against:** Spring Boot 3.3.2 / Spring Cloud 2023.0.3
+
 ---
 
 ## 🟢 Tier 1: The Intuitive Mental Model (For Beginners & Interns)

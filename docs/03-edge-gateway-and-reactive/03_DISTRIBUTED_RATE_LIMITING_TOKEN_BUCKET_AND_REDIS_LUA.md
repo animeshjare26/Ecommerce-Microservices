@@ -4,6 +4,12 @@
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Token Bucket Algorithm, Leaky Bucket, Fixed Window Spikes, Redis Atomic Lua Scripts.
 
+> **Status:** Implemented
+>
+> **Related code:** `api-gateway/src/main/java/com/ecommerce/gateway/config/RateLimiterConfig.java`
+>
+> **Last verified against:** Spring Boot 3.3.2 / Spring Cloud 2023.0.3
+
 ---
 
 ## 🟢 Tier 1: The Intuitive Mental Model (For Beginners & Interns)

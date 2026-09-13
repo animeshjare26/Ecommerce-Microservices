@@ -4,6 +4,12 @@
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Correlation Identifier Pattern, Distributed Logging, OpenTelemetry, SLF4J MDC, TraceId vs. SpanId.
 
+> **Status:** Partially implemented — gateway correlation IDs are implemented; cross-service tracing is planned.
+>
+> **Related code:** `api-gateway/src/main/java/com/ecommerce/gateway/filter/CorrelationIdFilter.java`
+>
+> **Last verified against:** Spring Boot 3.3.2 / Spring Cloud 2023.0.3
+
 ---
 
 ## 🟢 Tier 1: The Intuitive Mental Model (For Beginners & Interns)

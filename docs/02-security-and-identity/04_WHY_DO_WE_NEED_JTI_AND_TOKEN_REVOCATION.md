@@ -4,6 +4,12 @@
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** RFC 7519 `jti` Claim, Single-Device Logout, Replay Attack Defense, Redis TTL Blocklist.
 
+> **Status:** Partially implemented — refresh-token tracking is implemented; gateway access-token blocklisting is planned.
+>
+> **Related code:** `user-service/src/main/java/com/ecommerce/user/service/impl/AuthServiceImpl.java`, `user-service/src/main/java/com/ecommerce/user/repository/RefreshTokenRepository.java`
+>
+> **Last verified against:** Spring Boot 3.3.2 / JJWT 0.12.6
+
 ---
 
 ## 🟢 Tier 1: The Intuitive Mental Model (For Beginners & Interns)

@@ -4,6 +4,12 @@
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Client-Side Discovery (Netflix Eureka), Server-Side Discovery (AWS ALB / Kubernetes DNS), Proxy Bottlenecks, Single vs. Double Hops.
 
+> **Status:** Implemented
+>
+> **Related code:** `discovery-server/src/main/java/com/ecommerce/discovery/DiscoveryServerApplication.java`, `user-service/src/main/resources/application.yml`
+>
+> **Last verified against:** Spring Boot 3.3.2 / Spring Cloud 2023.0.3
+
 ---
 
 ## 🟢 Tier 1: The Intuitive Mental Model (For Beginners & Interns)

@@ -4,6 +4,12 @@
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Database-per-Service Pattern, Polyglot Persistence, Relational (PostgreSQL) vs. In-Memory (Redis), Schema Independence.
 
+> **Status:** Conceptual
+>
+> **Related code:** `docker-compose.yml`, `user-service/src/main/resources/db/migration/V1__init_user_schema.sql`
+>
+> **Last verified against:** Spring Boot 3.3.2
+
 ---
 
 ## 🟢 Tier 1: The Intuitive Mental Model (For Beginners & Interns)

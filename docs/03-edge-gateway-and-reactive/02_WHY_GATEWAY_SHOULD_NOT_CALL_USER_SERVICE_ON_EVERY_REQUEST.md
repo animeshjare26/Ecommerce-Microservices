@@ -4,6 +4,12 @@
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Edge Authentication, Remote Token Introspection vs. In-Memory Cryptographic Validation, Blast Radius, Load Amplification.
 
+> **Status:** Implemented
+>
+> **Related code:** `api-gateway/src/main/java/com/ecommerce/gateway/filter/JwtAuthenticationFilter.java`
+>
+> **Last verified against:** Spring Boot 3.3.2 / Spring Cloud 2023.0.3
+
 ---
 
 ## 🟢 Tier 1: The Intuitive Mental Model (For Beginners & Interns)

@@ -4,6 +4,12 @@
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Reading Order:** Read FIRST before studying JWT Anatomy or Asymmetric Cryptography.
 
+> **Status:** Implemented
+>
+> **Related code:** `user-service/src/main/java/com/ecommerce/user/security/SecurityConfiguration.java`
+>
+> **Last verified against:** Spring Boot 3.3.2 / Spring Security 6
+
 ---
 
 ## 🟢 Tier 1: The Intuitive Mental Model (For Beginners & Interns)

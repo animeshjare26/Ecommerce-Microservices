@@ -4,6 +4,12 @@
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Lease Renewals (30s), Expiration Timers (90s), Eviction Thresholds (85%), Network Partition Resilience, Zombie Instance Mitigation.
 
+> **Status:** Implemented
+>
+> **Related code:** `discovery-server/src/main/resources/application.yml`
+>
+> **Last verified against:** Spring Boot 3.3.2 / Spring Cloud 2023.0.3
+
 ---
 
 ## 🟢 Tier 1: The Intuitive Mental Model (For Beginners & Interns)

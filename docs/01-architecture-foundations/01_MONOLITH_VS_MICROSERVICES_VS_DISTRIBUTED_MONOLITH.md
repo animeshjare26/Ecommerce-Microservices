@@ -4,6 +4,12 @@
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Bounded Contexts, Conway's Law, Tight Coupling, The Distributed Monolith Trap.
 
+> **Status:** Conceptual
+>
+> **Related code:** `IMPLEMENTATION_PLAN.md`
+>
+> **Last verified against:** Repository architecture plan (2026-09-14)
+
 ---
 
 ## 🟢 Tier 1: The Intuitive Mental Model (For Beginners & Interns)
