@@ -1,0 +1,46 @@
+# =====================================================================================
+# FILE: docker-compose.yml
+# PURPOSE: Local infrastructure orchestrator for PostgreSQL 16 and Redis 7.
+# LEARNING NOTE:
+# Microservices require isolated databases ("Database per service" pattern).
+# Instead of running 6 separate heavy PostgreSQL containers, we run ONE Postgres 16
+# container that auto-initializes 6 separate logical databases via init-databases.sql.
+# This keeps local RAM footprint < 150MB!
+# =====================================================================================
+
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    networks:
+      - ecommerce-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  ecommerce-network:
+    driver: bridge
