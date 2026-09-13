@@ -1,6 +1,6 @@
 # Deep Dive 05: Distributed Tracing & The Correlation ID Pattern
 
-> **Module:** `03-edge-gateway-and-reactive`  
+> **Module:** `07-edge-gateway-and-reactive`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Correlation Identifier Pattern, Distributed Logging, OpenTelemetry, SLF4J MDC, TraceId vs. SpanId.
 
@@ -119,3 +119,23 @@ At Uber or Netflix scale (billions of requests daily), recording every single tr
 **Answer:**
 If an attacker sends an `X-Correlation-Id` containing newline characters (`\n` or `\r`), they can forge fake log lines in text-based log files (**Log Injection / CRLF Injection**).
 - **Mitigation:** The Gateway validates that `X-Correlation-Id` matches an alphanumeric UUID pattern (`^[a-zA-Z0-9\\-]+$`) or sanitizes newline characters before injecting into headers and log contexts!
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- Gateway correlation-ID handling is implemented in `api-gateway/src/main/java/com/ecommerce/gateway/filter/CorrelationIdFilter.java`.
+
+### Mini exercise
+- Make the gateway generate a correlation ID when absent, return it in the response, and propagate it to one downstream service.
+
+### Failure scenario
+- **Symptom:** A production error spans several services but logs cannot be connected.
+- **Cause:** Each service creates a new identifier or fails to propagate the inbound trace context.
+- **Fix:** Preserve W3C `traceparent` where tracing is enabled and use a validated correlation ID consistently in logs.
+
+### Key takeaway
+- Correlation IDs connect logs; trace and span IDs model causality.
+- Validate client-provided identifiers before logging them.
+- Sampling decisions should retain errors and high-latency traces.

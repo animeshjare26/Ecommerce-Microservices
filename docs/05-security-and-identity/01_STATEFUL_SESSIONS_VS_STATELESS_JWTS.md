@@ -1,6 +1,6 @@
 # Deep Dive 01: Stateful Sessions vs. Stateless JWTs
 
-> **Module:** `02-security-and-identity`  
+> **Module:** `05-security-and-identity`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Reading Order:** Read FIRST before studying JWT Anatomy or Asymmetric Cryptography.
 
@@ -108,3 +108,24 @@ Yes, a 1KB JWT sent across 100 API calls adds ~100KB of network ingress bandwidt
 ### Q5: Can you sign a JWT with one algorithm and verify with another? (The Algorithm Confusion Attack)
 **Answer:**
 Yes! This was a famous vulnerability in early JWT libraries. If a server supports both RS256 (asymmetric) and HS256 (symmetric), an attacker can take the server's **public key** (which is publicly known), sign a forged token using **HS256** with the public key as the secret, and change the header to `{"alg": "HS256"}`. If the server naively uses the same verification method without explicitly validating the expected algorithm, it verifies the forged token! Modern JJWT 0.12.6 explicitly prevents this by separating `verifyWith(SecretKey)` and `verifyWith(PublicKey)`.
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- Stateless security is configured in `user-service/src/main/java/com/ecommerce/user/security/SecurityConfiguration.java`.
+- Access-token parsing occurs in `user-service/src/main/java/com/ecommerce/user/security/jwt/AuthTokenFilter.java`.
+
+### Mini exercise
+- Trace a `GET /api/users/me` request and explain where authentication is created and cleared.
+
+### Failure scenario
+- **Symptom:** A user remains authorized after being disabled or resetting a password.
+- **Cause:** A previously issued access token has not expired and there is no access-token blocklist.
+- **Fix:** Keep access tokens short-lived; add a blocklist or token-version check when immediate revocation is required.
+
+### Key takeaway
+- JWTs remove HTTP session state, not all security state.
+- Signed JWT payloads are readable; do not put secrets in them.
+- Token revocation is a deliberate availability/security trade-off.

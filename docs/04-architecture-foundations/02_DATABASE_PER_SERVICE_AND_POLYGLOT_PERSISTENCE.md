@@ -1,6 +1,6 @@
 # Deep Dive 02: Database-per-Service & Polyglot Persistence
 
-> **Module:** `01-architecture-foundations`  
+> **Module:** `04-architecture-foundations`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Database-per-Service Pattern, Polyglot Persistence, Relational (PostgreSQL) vs. In-Memory (Redis), Schema Independence.
 
@@ -115,3 +115,24 @@ PostgreSQL processes have a global maximum connection limit (`max_connections`, 
 - **Mitigation:**
   1. Size HikariCP pools conservatively based on the formula: $\text{Connections} = (\text{CPU Cores} \times 2) + \text{Effective Spindle Count}$ (typically 10 connections per service).
   2. Deploy **AWS RDS Proxy** or **PgBouncer** between microservices and PostgreSQL for connection multiplexing and transaction-level pooling.
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- `user-service` owns its PostgreSQL schema through `user-service/src/main/resources/db/migration/V1__init_user_schema.sql`.
+- Redis is reserved for gateway rate limiting and future cart/session-adjacent workloads.
+
+### Mini exercise
+- Add a new user-service table through a Flyway migration without modifying another service's database or querying it directly.
+
+### Failure scenario
+- **Symptom:** A schema migration in one service breaks another service at runtime.
+- **Cause:** Another service reads the owner's table directly.
+- **Fix:** Replace cross-database access with an API, event, or dedicated read model.
+
+### Key takeaway
+- A service owns its schema and data-access credentials.
+- Pick storage based on access patterns, not fashion.
+- Use an outbox when a database change must produce an event.

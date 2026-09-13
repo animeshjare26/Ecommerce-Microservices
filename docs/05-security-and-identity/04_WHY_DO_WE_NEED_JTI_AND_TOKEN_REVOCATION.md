@@ -1,6 +1,6 @@
 # Deep Dive 04: Why Do We Need JTI & Token Revocation?
 
-> **Module:** `02-security-and-identity`  
+> **Module:** `05-security-and-identity`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** RFC 7519 `jti` Claim, Single-Device Logout, Replay Attack Defense, Redis TTL Blocklist.
 
@@ -133,3 +133,23 @@ This is a business-critical trade-off:
 ### Q5: How does `jti` facilitate SOC 2 / ISO 27001 compliance?
 **Answer:**
 Compliance standards require non-repudiation and auditable access logs. Because a `userId` may have hundreds of requests across days, logging only `userId` does not prove which client device originated a specific data modification. Associating every API write operation with an immutable `jti` provides a forensically verifiable audit trail that traces directly back to the exact login event and IP address.
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- Refresh-token identifiers are stored in `user-service/src/main/java/com/ecommerce/user/entity/RefreshToken.java` and checked by `AuthServiceImpl.java`.
+
+### Mini exercise
+- Implement an atomic access-token blocklist lookup with Redis TTL equal to the token's remaining lifetime.
+
+### Failure scenario
+- **Symptom:** A stolen token can still perform a sensitive operation after logout.
+- **Cause:** The system has an identifier but never checks a revocation or consumed-token store.
+- **Fix:** Use a TTL blocklist for access-token revocation or an allowlist for single-use/long-lived tokens.
+
+### Key takeaway
+- `jti` identifies a token; it does not revoke it by itself.
+- Blocklists fit short-lived access tokens; allowlists fit refresh tokens.
+- Single-use flows need an atomic consume operation.

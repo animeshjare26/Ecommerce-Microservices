@@ -1,6 +1,6 @@
 # Deep Dive 02: Why the Gateway Must NOT Call User Service on Every Request
 
-> **Module:** `03-edge-gateway-and-reactive`  
+> **Module:** `07-edge-gateway-and-reactive`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Edge Authentication, Remote Token Introspection vs. In-Memory Cryptographic Validation, Blast Radius, Load Amplification.
 
@@ -136,3 +136,23 @@ This is why enterprise architectures implement **mTLS (Mutual TLS / Service Mesh
 **Answer:**
 The Confused Deputy problem occurs when Service A legitimately calls Service B on behalf of User Alice, but Service B has higher privileges and accidentally executes an action that Alice was not authorized to perform.
 - **Solution:** Passing both `X-User-Id` (the user context) and cryptographic service identity headers (`X-Client-Service-Id: order-service`), allowing downstream services to evaluate both the user's role and the calling service's permission scope!
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- The gateway verifies tokens and injects identity headers in `api-gateway/src/main/java/com/ecommerce/gateway/filter/JwtAuthenticationFilter.java`.
+
+### Mini exercise
+- Send a request with a forged `X-User-Id` header and verify that the gateway strips or overwrites it after JWT validation.
+
+### Failure scenario
+- **Symptom:** A public client reaches a downstream service directly and impersonates another user with request headers.
+- **Cause:** The service trusts gateway headers without network isolation or service authentication.
+- **Fix:** Restrict service ingress to the gateway and use mTLS or another authenticated internal-identity mechanism.
+
+### Key takeaway
+- Validate access tokens locally at the gateway when possible.
+- Do not make a user-service network call for every request merely to validate a signature.
+- Identity headers are trusted only inside an enforced trust boundary.

@@ -1,6 +1,6 @@
 # Deep Dive 01: Client-Side vs. Server-Side Service Discovery
 
-> **Module:** `04-service-discovery`  
+> **Module:** `08-service-discovery`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Client-Side Discovery (Netflix Eureka), Server-Side Discovery (AWS ALB / Kubernetes DNS), Proxy Bottlenecks, Single vs. Double Hops.
 
@@ -121,3 +121,24 @@ A custom Spring Cloud LoadBalancer `ServiceInstanceListSupplier` inspects the re
 **Answer:**
 **YES!** Because Eureka clients **cache the registry locally in JVM memory**.
 If the Eureka Server crashes, microservices and the API Gateway continue routing traffic using their cached instance list. As long as the physical microservice IP addresses don't change, the platform remains 100% operational during a Eureka outage!
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- The registry starts in `discovery-server/src/main/java/com/ecommerce/discovery/DiscoveryServerApplication.java`.
+- Clients register through the Eureka configuration in each service's `application.yml`.
+
+### Mini exercise
+- Start the discovery server and user service, then inspect the registered application name and instance metadata in the Eureka dashboard.
+
+### Failure scenario
+- **Symptom:** A gateway route using `lb://user-service` has no available instances.
+- **Cause:** The service failed to register, uses a mismatched application name, or cannot reach Eureka.
+- **Fix:** Verify Eureka URL, application name, network reachability, and the client registration logs.
+
+### Key takeaway
+- Client-side discovery moves instance selection into the caller.
+- A registry cache improves outage tolerance but can become stale.
+- Kubernetes DNS/service discovery is often simpler when Kubernetes already owns scheduling.

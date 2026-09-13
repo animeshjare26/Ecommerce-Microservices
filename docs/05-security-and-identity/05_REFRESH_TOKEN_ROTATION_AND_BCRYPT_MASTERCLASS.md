@@ -1,6 +1,6 @@
 # Deep Dive 05: Refresh Token Rotation & BCrypt Password Hashing
 
-> **Module:** `02-security-and-identity`  
+> **Module:** `05-security-and-identity`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Refresh Token Rotation (RTR), Automatic Breach Detection, BCrypt Adaptive Hashing, Cryptographic Salts.
 
@@ -113,3 +113,23 @@ Via Spring Security's **`DelegatingPasswordEncoder`**!
 1. Mark `Argon2` as the default encoder for all new hashes.
 2. When an existing user logs in with their old BCrypt password, `DelegatingPasswordEncoder` detects the `$2a$` prefix and verifies using BCrypt.
 3. Once verified, Spring calls `passwordEncoder.upgradeEncoding(hash)`. If true, the application transparently re-hashes the raw password using Argon2 and updates the PostgreSQL row! Over time, active users are upgraded without requiring forced password resets.
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- Login, refresh-token rotation, password reset, and BCrypt hashing are handled by `user-service/src/main/java/com/ecommerce/user/service/impl/AuthServiceImpl.java`.
+
+### Mini exercise
+- Write a test proving that a rotated refresh token cannot be used a second time.
+
+### Failure scenario
+- **Symptom:** Two simultaneous refresh requests both receive new token pairs.
+- **Cause:** The implementation reads and revokes the old token without an atomic conditional update or lock.
+- **Fix:** Revoke with `WHERE token_jti = ? AND is_revoked = false` and proceed only if one row changed.
+
+### Key takeaway
+- Passwords are hashed, never encrypted.
+- Refresh rotation limits replay but needs atomic persistence.
+- Revoking refresh tokens does not immediately revoke existing access tokens.

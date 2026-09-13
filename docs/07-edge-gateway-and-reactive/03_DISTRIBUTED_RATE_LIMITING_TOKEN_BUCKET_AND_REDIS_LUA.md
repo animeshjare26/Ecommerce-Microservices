@@ -1,6 +1,6 @@
 # Deep Dive 03: Distributed Rate Limiting: Token Bucket & Redis Lua Scripts
 
-> **Module:** `03-edge-gateway-and-reactive`  
+> **Module:** `07-edge-gateway-and-reactive`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Token Bucket Algorithm, Leaky Bucket, Fixed Window Spikes, Redis Atomic Lua Scripts.
 
@@ -142,3 +142,23 @@ When clients receive 429, naive clients immediately retry after exactly 1 second
 - **Solution:** Clients must implement **Exponential Backoff with Full Jitter** (AWS architecture pattern):
   $$\text{WaitTime} = \text{random}(0, 2^{\text{attempt}} \times \text{base\_delay})$$
   Adding randomness ("jitter") spreads out retry requests smoothly over time!
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- Gateway rate-limit configuration belongs in `api-gateway/src/main/java/com/ecommerce/gateway/config/RateLimiterConfig.java`.
+
+### Mini exercise
+- Configure separate limits for anonymous login requests and authenticated product browsing, then test the response after the limit is exceeded.
+
+### Failure scenario
+- **Symptom:** A rate limit is bypassed when two gateway instances receive requests simultaneously.
+- **Cause:** Each instance keeps its own counter or uses a non-atomic read-modify-write sequence.
+- **Fix:** Use a shared store and atomic Redis/Lua operation for the refill-and-consume decision.
+
+### Key takeaway
+- Token buckets allow controlled bursts and a stable long-term rate.
+- Distributed enforcement needs shared, atomic state.
+- Return `429` with retry guidance and ensure clients use backoff plus jitter.

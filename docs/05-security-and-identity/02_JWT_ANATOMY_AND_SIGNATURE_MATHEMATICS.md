@@ -1,6 +1,6 @@
 # Deep Dive 02: JWT Anatomy & Signature Mathematics
 
-> **Module:** `02-security-and-identity`  
+> **Module:** `05-security-and-identity`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Base64Url Encoding, Header, Payload/Claims, Cryptographic Signatures, Tampering Detection.
 
@@ -120,3 +120,23 @@ Most web servers and load balancers have a **default HTTP header limit of 8KB** 
 - If an enterprise packs 50 user permissions, 20 tenant IDs, and nested company attributes into a JWT, the token can swell to 10KB.
 - In-flight requests will be abruptly rejected by NGINX or Tomcat with **HTTP 431 Request Header Fields Too Large**!
 - **Solution:** Keep JWT claims minimal (`userId`, `roles`, `jti`), and fetch granular permissions from an in-memory cache when needed.
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- JWT generation and validation are implemented in `user-service/src/main/java/com/ecommerce/user/security/jwt/JwtUtils.java`.
+
+### Mini exercise
+- Decode a locally issued token, identify `sub`, `iat`, `exp`, `jti`, `userId`, and `roles`, then verify why changing one claim invalidates its signature.
+
+### Failure scenario
+- **Symptom:** Requests fail with HTTP 431 or a proxy rejects an Authorization header.
+- **Cause:** Too many roles, permissions, or profile fields were embedded in the JWT.
+- **Fix:** Keep claims small and retrieve detailed authorization data separately.
+
+### Key takeaway
+- Base64Url encoding is not encryption.
+- A signature protects integrity and authenticity.
+- `exp`, issuer, audience, and algorithm validation define a token's trust boundary.

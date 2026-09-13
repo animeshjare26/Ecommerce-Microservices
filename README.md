@@ -8,11 +8,12 @@ This project is built as an interactive, highly documented code reference design
 
 ## 📖 Master Architecture & Learning Roadmap
 - 🗺️ **[IMPLEMENTATION_PLAN.md](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/IMPLEMENTATION_PLAN.md)**: Master technical blueprint, phased roadmap, and architecture guide.
-- 📚 **[docs/ Knowledge Base](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/README.md)**: Deep-dive concept guides, doubts clearing, and Tier-1 interview compendium.
-  - [Architecture Foundations](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/01-architecture-foundations/01_MONOLITH_VS_MICROSERVICES_VS_DISTRIBUTED_MONOLITH.md)
-  - [Security & Identity Masterclass](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/02-security-and-identity/01_STATEFUL_SESSIONS_VS_STATELESS_JWTS.md)
-  - [Edge Routing & Reactive Gateway](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/03-edge-gateway-and-reactive/01_NETTY_REACTIVE_EVENT_LOOPS_VS_TOMCAT_THREAD_POOLS.md)
-  - [Service Discovery & Netflix Eureka](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/04-service-discovery/01_CLIENT_SIDE_VS_SERVER_SIDE_DISCOVERY.md)
+- 📚 **[docs/ Knowledge Base](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/README.md)**: 12-Module Deep-Dive Masterclass & Tier-1 Interview Compendium.
+  - [Module 01: Java Foundations](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/01-java-foundations/01_OOP_SOLID_AND_CLEAN_CODE.md)
+  - [Module 04: Architecture Foundations](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/04-architecture-foundations/01_MONOLITH_VS_MICROSERVICES_VS_DISTRIBUTED_MONOLITH.md)
+  - [Module 05: Security & Identity Masterclass](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/05-security-and-identity/01_STATEFUL_SESSIONS_VS_STATELESS_JWTS.md)
+  - [Module 07: Edge Routing & Reactive Gateway](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/07-edge-gateway-and-reactive/01_NETTY_REACTIVE_EVENT_LOOPS_VS_TOMCAT_THREAD_POOLS.md)
+  - [Module 08: Service Discovery & Netflix Eureka](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/docs/08-service-discovery/01_CLIENT_SIDE_VS_SERVER_SIDE_DISCOVERY.md)
 - 📘 **Service Master Guides:**
   - [User & Identity Service Guide](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/user-service/USER_SERVICE_MASTER_GUIDE.md)
   - [Discovery Server (Eureka) Guide](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/discovery-server/DISCOVERY_SERVER_MASTER_GUIDE.md)

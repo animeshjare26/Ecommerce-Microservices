@@ -1,6 +1,6 @@
 # Deep Dive 02: Netflix Eureka & The CAP Theorem (AP vs. CP)
 
-> **Module:** `04-service-discovery`  
+> **Module:** `08-service-discovery`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** CAP Theorem, Network Partitions, AP (Availability) vs. CP (Consistency), Quorum, Cascadeless Failure.
 
@@ -119,3 +119,23 @@ You would choose Consul when:
 1. You have a **multi-language microservices architecture** (Go, Python, Node.js, Rust) where services cannot easily embed Java-based Eureka Client JARs, and need native DNS resolution (e.g. `user-service.service.consul`).
 2. You require **strict Key-Value distributed configuration** (Consul KV) with distributed locks.
 3. You need integrated Service Mesh and zero-trust mTLS proxying (Consul Connect).
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- Eureka server behavior is configured in `discovery-server/src/main/resources/application.yml`.
+
+### Mini exercise
+- Run two Eureka nodes, disconnect one from its peer, and record how registry information becomes temporarily inconsistent.
+
+### Failure scenario
+- **Symptom:** A caller occasionally selects an instance that was recently terminated.
+- **Cause:** The registry and clients are eventually consistent, so their caches still contain stale instance data.
+- **Fix:** Use short connect/read timeouts, retries with limits, health checks, and graceful deregistration.
+
+### Key takeaway
+- CAP describes behavior during a network partition, not a permanent product label.
+- AP discovery favors serving a potentially stale registry over refusing discovery.
+- CP and AP choices depend on the operation's correctness requirements.

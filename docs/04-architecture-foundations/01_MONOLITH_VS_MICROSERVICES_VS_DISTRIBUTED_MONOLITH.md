@@ -1,6 +1,6 @@
 # Deep Dive 01: Monolith vs. Microservices vs. The Distributed Monolith Anti-Pattern
 
-> **Module:** `01-architecture-foundations`  
+> **Module:** `04-architecture-foundations`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Bounded Contexts, Conway's Law, Tight Coupling, The Distributed Monolith Trap.
 
@@ -124,3 +124,23 @@ The Blast Radius is the percentage of the overall platform that is degraded or b
   1. Circuit Breakers (Resilience4j) to fail fast and return fallback data.
   2. Bulkheads to isolate worker thread pools so a slow service cannot starve the rest of the application.
   3. Asynchronous event queues to buffer requests when a consumer service is temporarily down.
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- The service boundaries and ownership model are defined in `IMPLEMENTATION_PLAN.md`.
+
+### Mini exercise
+- For a checkout feature, identify which service owns each write and which updates should be published as events instead of synchronous calls.
+
+### Failure scenario
+- **Symptom:** A product release requires coordinated deployments of several services.
+- **Cause:** Services share internal models or rely on long synchronous call chains.
+- **Fix:** Define an API/event contract and remove the direct implementation dependency.
+
+### Key takeaway
+- A modular monolith is often the right starting point.
+- Service boundaries follow business ownership, not technical layers.
+- Network calls introduce failure and latency; use them deliberately.

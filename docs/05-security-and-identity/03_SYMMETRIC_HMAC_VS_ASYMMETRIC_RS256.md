@@ -1,6 +1,6 @@
 # Deep Dive 03: Symmetric HMAC-SHA256 vs. Asymmetric RS256
 
-> **Module:** `02-security-and-identity`  
+> **Module:** `05-security-and-identity`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Cryptographic Signing, Zero-Trust Architecture, PKCS#8 vs. X.509.
 
@@ -133,3 +133,24 @@ No. In asymmetric cryptography:
 - Data encrypted with the Public Key can **ONLY be decrypted by the matching Private Key**.
 - For digital signatures (our use case), data signed with the Private Key can only be **verified** by the Public Key.
 Having the Public Key grants zero ability to decrypt data or forge signatures.
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- Access tokens use asymmetric signing through `user-service/src/main/java/com/ecommerce/user/security/jwt/JwtUtils.java` and `RsaKeyProvider.java`.
+- The public key is exposed by `user-service/src/main/java/com/ecommerce/user/controller/PublicKeyController.java`.
+
+### Mini exercise
+- Verify an issued RS256 access token using only the exposed public key; confirm that the public key cannot create a valid replacement token.
+
+### Failure scenario
+- **Symptom:** A gateway accepts a token signed with an unexpected algorithm.
+- **Cause:** The verifier trusts the token header's algorithm instead of enforcing the expected key type and algorithm.
+- **Fix:** Pin access-token verification to RS256 and refresh-token verification to HS256.
+
+### Key takeaway
+- HS256 shares one secret for signing and verification.
+- RS256 separates the signer from verifiers.
+- Public-key distribution and key rotation are part of the design, not an afterthought.

@@ -1,6 +1,6 @@
 # Deep Dive 03: Eureka Self-Preservation Mode & Zombie Instances
 
-> **Module:** `04-service-discovery`  
+> **Module:** `08-service-discovery`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Lease Renewals (30s), Expiration Timers (90s), Eviction Thresholds (85%), Network Partition Resilience, Zombie Instance Mitigation.
 
@@ -139,3 +139,23 @@ Instead of killing the JVM with `kill -9`:
 In asymmetric network partitions, Node B will assume Node A is dead, while Node A believes Node B is active.
 - In Eureka's AP model, this causes temporary inconsistency in peer replication queues.
 - Eureka resolves this through **periodic full registry syncs** (`PeerAwareInstanceRegistryImpl` full synchronization) every few minutes, rather than relying solely on incremental deltas, ensuring eventual consistency once network symmetry is restored!
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- Eureka server configuration lives in `discovery-server/src/main/resources/application.yml`.
+
+### Mini exercise
+- Stop a registered service without graceful shutdown and measure the time before it disappears from the registry and gateway route.
+
+### Failure scenario
+- **Symptom:** Traffic is still sent to an unhealthy service after its dependency fails.
+- **Cause:** Its process continues sending Eureka heartbeats, or self-preservation/caches delay eviction.
+- **Fix:** Publish meaningful health status, set bounded client timeouts, and deregister gracefully before deployment shutdown.
+
+### Key takeaway
+- Heartbeats show liveness, not necessarily business readiness.
+- Self-preservation reduces mass eviction during a partition but can retain stale instances.
+- Service discovery complements, but does not replace, timeouts and resilience controls.

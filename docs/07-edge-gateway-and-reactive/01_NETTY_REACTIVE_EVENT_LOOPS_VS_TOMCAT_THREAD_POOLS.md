@@ -1,6 +1,6 @@
 # Deep Dive 01: Netty Reactive Event Loops vs. Tomcat Thread Pools
 
-> **Module:** `03-edge-gateway-and-reactive`  
+> **Module:** `07-edge-gateway-and-reactive`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Non-Blocking I/O Multiplexing, Linux `epoll`, Reactor Pattern, Spring WebFlux.
 
@@ -127,3 +127,23 @@ In traditional systems, if a fast publisher produces 100,000 messages/sec but a 
 ### Q5: How does Spring Cloud Gateway route requests asynchronously without blocking?
 **Answer:**
 When a route matches (`lb://user-service`), the Gateway does not open a synchronous `HttpURLConnection`. It utilizes Netty's non-blocking `HttpClient` (`reactor-netty`). It registers an NIO channel to the target host and immediately returns a reactive `Mono<Void>`. When the downstream socket receives response bytes, Netty triggers a pipeline callback that streams the bytes back to the original client socket.
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- The reactive gateway entry point is `api-gateway/src/main/java/com/ecommerce/gateway/ApiGatewayApplication.java`.
+
+### Mini exercise
+- Add a gateway filter that logs request duration without calling blocking APIs or using `Thread.sleep`.
+
+### Failure scenario
+- **Symptom:** Gateway latency increases sharply under modest traffic even though CPU usage is low.
+- **Cause:** A blocking database, file, or HTTP call runs on a Netty event-loop thread.
+- **Fix:** Remove the blocking work from the gateway path or deliberately isolate unavoidable blocking work on a bounded scheduler.
+
+### Key takeaway
+- Reactive throughput depends on keeping event loops non-blocking.
+- `ThreadLocal` is not reliable for reactive request context.
+- Backpressure controls producer/consumer flow; it does not make blocking code safe.

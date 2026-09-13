@@ -1,6 +1,6 @@
 # Deep Dive 04: Edge CORS vs. The CORS Duplication Bug
 
-> **Module:** `03-edge-gateway-and-reactive`  
+> **Module:** `07-edge-gateway-and-reactive`  
 > **Target Audience:** From Beginner Intern to Principal Architect  
 > **Core Concept:** Cross-Origin Resource Sharing, Preflight OPTIONS, Header Duplication Bug, Centralized Edge Proxying.
 
@@ -123,3 +123,23 @@ If your backend sends custom metadata—such as **`X-Correlation-Id`** for distr
 ```http
 Access-Control-Expose-Headers: X-Correlation-Id, X-RateLimit-Remaining
 ```
+
+---
+
+## 🛠️ Tier 5: Apply It in This Repository
+
+### Where it appears
+- CORS policy is configured in `api-gateway/src/main/java/com/ecommerce/gateway/config/CorsConfig.java`.
+
+### Mini exercise
+- Test a browser preflight for an Authorization-header request from an allowed origin and from a disallowed origin.
+
+### Failure scenario
+- **Symptom:** The API returns 200 in Postman but the browser blocks the response.
+- **Cause:** CORS response headers are missing, duplicated, or sent by both gateway and service with incompatible values.
+- **Fix:** Make the gateway the single source of browser-facing CORS policy and use a specific origin allowlist.
+
+### Key takeaway
+- CORS is enforced by browsers, not by Postman or server-to-server clients.
+- Preflight requests require explicit method and header permission.
+- Never combine credentialed requests with an unrestricted origin policy.
