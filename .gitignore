@@ -3,6 +3,9 @@
 target/
 *.class
 
+# Local CodeGraph index database and daemon state
+.codegraph/
+
 # Log files
 *.log
 

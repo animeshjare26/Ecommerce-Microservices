@@ -74,13 +74,21 @@ spring:
           filters:
             - RewritePath=/api/v1/(?<segment>.*), /api/${segment}
 
-        # Future Microservice Route Placeholders (Plug-and-play as services are built):
-        # - id: product-service-route
-        #   uri: lb://product-service
-        #   predicates:
-        #     - Path=/api/v1/products/**
-        #   filters:
-        #     - RewritePath=/api/v1/(?<segment>.*), /api/${segment}
+        # 3. Product Catalog Routes (Public search/browse & Admin/Seller mutation)
+        - id: product-service-products
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/products/**
+          filters:
+            - RewritePath=/api/v1/(?<segment>.*), /api/${segment}
+
+        # 4. Category Routes (Public list & Admin mutation)
+        - id: product-service-categories
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/categories/**
+          filters:
+            - RewritePath=/api/v1/(?<segment>.*), /api/${segment}
 
 # Netflix Eureka Service Discovery Client
 eureka:

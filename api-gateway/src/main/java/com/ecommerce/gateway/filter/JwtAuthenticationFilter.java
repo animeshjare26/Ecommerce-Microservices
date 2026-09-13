@@ -17,6 +17,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -106,6 +107,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
+        HttpMethod method = exchange.getRequest().getMethod();
 
         // Step 1: Whitelist Check
         if (isWhitelisted(path)) {
@@ -113,8 +115,18 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        // Step 2: Extract Authorization Header
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+
+        // Step 2: Public GET Check for Product Catalog & Categories
+        boolean isPublicCatalogGet = HttpMethod.GET.equals(method) &&
+                (path.startsWith("/api/v1/products") || path.startsWith("/api/v1/categories"));
+
+        if (isPublicCatalogGet && (authHeader == null || !authHeader.startsWith("Bearer "))) {
+            log.debug("Public catalog GET on [{}]; bypassing authentication", path);
+            return chain.filter(exchange);
+        }
+
+        // Step 3: Extract Authorization Header
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn("Missing or invalid Authorization header on protected path [{}]", path);
             return onError(exchange, "Missing or malformed Authorization header. Use 'Bearer <token>'", HttpStatus.UNAUTHORIZED);

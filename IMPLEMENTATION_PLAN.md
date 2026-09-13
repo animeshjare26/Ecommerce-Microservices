@@ -108,12 +108,16 @@ The project aims for the following four learning standards. Foundational classes
   - Response Envelope: `GenericResponse<T>` (`{ success, message, data }`).
   - Global Error Handling: `@RestControllerAdvice` mapping validation and security errors to `GenericResponse.error()`.
   - Comprehensive in-line comments, file reading order, and tricky interview Q&A callouts in every file.
-- [ ] **Step 1.4:** Build `product-service`:
-  - Domain Entities: `Product`, `Category`.
-  - Flyway Migrations: `V1__init_product_schema.sql`.
-  - Performance: Spring Data JPA pagination, `@EntityGraph` and `JOIN FETCH` to eliminate Hibernate N+1 issues.
-  - Caching Layer: Redis read-through caching with `@Cacheable` and `@CacheEvict`.
-  - REST Layer: Public catalog search & admin-protected product mutation.
+- [x] **Step 1.4:** Build `product-service`:
+  - Domain Entities: `Product`, `Category`, `StockStatus` enum (`IN_STOCK`, `LOW_STOCK`, `OUT_OF_STOCK`).
+  - Standardized Data Types: `Long` for `stockQuantity`, `lowStockThreshold`, `sellerId`, and `BigDecimal` for `price`.
+  - Flyway Migrations: `V1__init_product_schema.sql` with composite B-Tree indexes and seed catalog items.
+  - Performance: Spring Data JPA pagination with `@EntityGraph(attributePaths = {"category"})` eliminating N+1 query latency in 1 SQL query.
+  - Caching Layer: Redis read-through caching (`@Cacheable`, `@CacheEvict`) with Jackson JSON serialization and tiered TTLs.
+  - Event Dampened Stock Thresholds: `getAll` returns coarse `StockStatus` (maximizing cache stability); `getById` surfaces urgency messages when in `LOW_STOCK`.
+  - Edge & Downstream Security: Public catalog browsing; RBAC enforcement for mutations via `RoleAuthorizationInterceptor` (`ROLE_ADMIN` / `ROLE_SELLER`).
+  - API Gateway Routes: Registered `/api/v1/products/**` and `/api/v1/categories/**` routing to `lb://product-service`.
+  - Pedagogical Standards & Tests: 12 comprehensive unit and slice tests, and `PRODUCT_SERVICE_MASTER_GUIDE.md`.
 
 ### Phase 2: Edge Routing, Discovery, Cart & Synchronous Resilience
 - [x] **Step 2.1:** Create `discovery-server` with Spring Cloud Netflix Eureka.
