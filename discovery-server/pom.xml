@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+=====================================================================================
+FILE: discovery-server/pom.xml
+MODULE: discovery-server (Netflix Eureka Service Registry)
+PURPOSE: Defines Maven dependencies, Spring Cloud release trains, and Java 21 target
+         for the central service registry of the E-Commerce Microservices ecosystem.
+
+DESIGN PATTERN / ARCHITECTURAL MECHANISM:
+- Service Registry & Discovery Pattern (Client-Side Discovery via Netflix Eureka).
+- Dynamic Service Catalog: Eliminates hardcoded hostnames/ports across microservices.
+
+EXECUTION FLOW POSITION:
+- Phase 2, Step 1: Must be booted FIRST before any microservices or API Gateways.
+- Every microservice registers heartbeats with Eureka on startup and fetches registry.
+
+READING ORDER:
+- Read THIS FILE first to understand Spring Cloud Eureka dependencies.
+- Read NEXT: src/main/resources/application.yml
+
+TRICKY INTERVIEW QUESTIONS & ARCHITECTURAL WISDOM:
+Q1: Senior/Lead Question: How does Eureka fit into the CAP Theorem (AP vs. CP)?
+A1: Eureka is designed specifically as an AP (Availability + Partition Tolerance) system!
+    Unlike CP registries (such as Apache ZooKeeper or HashiCorp Consul), Eureka prioritizes
+    returning slightly stale service instances over rejecting requests during network
+    partitions. In microservices, it is far better to attempt routing to a potentially
+    healthy instance than having the entire registry fail completely!
+
+Q2: Intermediate Question: What is Eureka's "Self-Preservation Mode"?
+A2: If Eureka stops receiving expected heartbeats from more than 15% of registered instances
+    in a 15-minute window, it assumes a network partition has occurred (rather than all
+    microservices dying simultaneously). It freezes instance eviction to protect healthy
+    services from being removed from the registry during transient network blips.
+
+Q3: Beginner Intern Question: Why do we need Eureka when Docker/Kubernetes have internal DNS?
+A3: Eureka provides client-side load balancing (`lb://`), fine-grained health metrics,
+    instant status metadata (UP, DOWN, OUT_OF_SERVICE), and works natively across hybrid
+    clouds, bare-metal servers, and local IDE development without requiring a full K8s cluster.
+=====================================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.ecommerce</groupId>
+    <artifactId>discovery-server</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>discovery-server</name>
+    <description>Netflix Eureka Service Registry for E-Commerce Microservices</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <spring-cloud.version>2023.0.3</spring-cloud.version>
+    </properties>
+
+    <dependencies>
+        <!-- Spring Cloud Netflix Eureka Server -->
+        <!-- Embeds the Eureka Registry engine and web-based dashboard on port 8761 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Actuator for health checks and registry metrics -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Testing Starters -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Cloud Release Train (BOM - Bill of Materials) -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <!-- Spring Boot Maven Plugin for packaging executable Fat Jar -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

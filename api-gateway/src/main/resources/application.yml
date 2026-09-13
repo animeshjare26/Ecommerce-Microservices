@@ -1,0 +1,109 @@
+# =====================================================================================
+# FILE: api-gateway/src/main/resources/application.yml
+# MODULE: api-gateway (Spring Cloud Reactive API Gateway)
+# PURPOSE: Configures edge ingress port 8080, Eureka service discovery routing (`lb://`),
+#          path rewriting, Redis connection, RSA public key path, and Actuator metrics.
+#
+# DESIGN PATTERN / ARCHITECTURAL CONCEPT:
+# - Reverse Proxy & Edge Routing Pattern (Spring Cloud Gateway).
+# - Dynamic Client-Side Load Balancing (`lb://` protocol via Eureka).
+# - Path Rewriting Pattern: Translates external API versioned paths (`/api/v1/*`)
+#   into internal microservice context paths (`/api/*`).
+#
+# READING ORDER:
+# - Read PREVIOUS: pom.xml
+# - Read THIS FILE: Understand edge route definitions, filters, and Redis connection.
+# - Read NEXT: src/main/java/com/ecommerce/gateway/security/RsaKeyProvider.java
+# - Read NEXT: src/main/java/com/ecommerce/gateway/filter/JwtAuthenticationFilter.java
+#
+# TRICKY INTERVIEW QUESTIONS & ARCHITECTURAL WISDOM:
+# Q1: Senior Question: What does the `lb://` prefix mean in Spring Cloud Gateway route URIs?
+# A1: `lb://` stands for "Load Balanced"! Instead of resolving a static IP (like `http://localhost:8081`),
+#     Spring Cloud Gateway's `ReactiveLoadBalancerClientFilter` intercepts the request,
+#     queries the local Eureka client cache for all instances of `USER-SERVICE`, and selects
+#     an instance using Round-Robin load balancing.
+#
+# Q2: Intermediate Question: How does `RewritePath` regex capture groups work?
+# A2: In `RewritePath=/api/v1/(?<segment>.*), /api/${segment}`, the named regex group
+#     `(?<segment>.*)` captures everything after `/api/v1/`. The replacement `/api/${segment}`
+#     prepends `/api` to match the target microservice's servlet context path.
+#     Example: `GET http://gateway:8080/api/v1/auth/login` becomes `GET http://user-service:8081/api/auth/login`!
+#
+# Q3: Beginner Intern Question: What is the difference between a `GatewayFilter` and a `GlobalFilter`?
+# A3: - A `GatewayFilter` applies ONLY to the specific route it is declared on in `application.yml`.
+#     - A `GlobalFilter` executes conditionally or unconditionally across EVERY route that passes
+#       through the Gateway (e.g. `CorrelationIdFilter`, `JwtAuthenticationFilter`).
+# =====================================================================================
+
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+
+  # Redis connection for Distributed Rate Limiting & JTI Revocation
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+
+  cloud:
+    gateway:
+      # Discover routes dynamically from Eureka
+      discovery:
+        locator:
+          enabled: false # We define explicit declarative routes below for strict security
+
+      # Declarative Route Table
+      routes:
+        # 1. Public Authentication Routes (Sign up, Login, Refresh, Password Reset)
+        - id: user-service-auth
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - RewritePath=/api/v1/(?<segment>.*), /api/${segment}
+
+        # 2. Protected User Management Routes (Profile, Addresses, User Details)
+        - id: user-service-users
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - RewritePath=/api/v1/(?<segment>.*), /api/${segment}
+
+        # Future Microservice Route Placeholders (Plug-and-play as services are built):
+        # - id: product-service-route
+        #   uri: lb://product-service
+        #   predicates:
+        #     - Path=/api/v1/products/**
+        #   filters:
+        #     - RewritePath=/api/v1/(?<segment>.*), /api/${segment}
+
+# Netflix Eureka Service Discovery Client
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}:${random.uuid}
+
+# RSA Public Key Configuration (Verification only - Zero Trust!)
+jwt:
+  rsa:
+    public-key-path: ${JWT_RSA_PUBLIC_KEY_PATH:classpath:certs/public_key.pem}
+
+# Actuator Endpoints for health and gateway route introspection
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,metrics
+  endpoint:
+    gateway:
+      enabled: true

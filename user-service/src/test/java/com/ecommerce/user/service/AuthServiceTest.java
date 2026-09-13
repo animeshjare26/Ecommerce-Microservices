@@ -165,6 +165,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByTokenJtiAndIsRevokedFalse("jti-123")).thenReturn(Optional.of(storedToken));
 
         User user = new User("Alice", "alice@example.com", "pass");
+        user.setId(1L);
         Role role = new Role("ROLE_USER", "Customer");
         user.setRoles(Set.of(role));
         when(userRepository.findByEmailIgnoreCaseAndIsActiveTrue("alice@example.com")).thenReturn(Optional.of(user));

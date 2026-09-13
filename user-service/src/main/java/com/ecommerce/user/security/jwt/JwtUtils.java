@@ -52,16 +52,26 @@ public class JwtUtils {
     // Injected type-safe configuration containing secrets and expiration minutes for each token type
     private final JwtConfig jwtConfig;
 
-    public JwtUtils(JwtConfig jwtConfig) {
+    // Injected RSA 2048-bit key provider for asymmetric RS256 cryptographic operations
+    private final RsaKeyProvider rsaKeyProvider;
+
+    public JwtUtils(JwtConfig jwtConfig, RsaKeyProvider rsaKeyProvider) {
         this.jwtConfig = jwtConfig;
+        this.rsaKeyProvider = rsaKeyProvider;
     }
 
     /**
      * Generates a signed, compacted JWT string.
      * 
+     * Cryptographic Strategy:
+     * - ACCESS_TOKEN: Signed using RS256 (RSA Asymmetric Private Key).
+     *   Verifiable by the API Gateway using ONLY the Public Key.
+     * - REFRESH_TOKEN & FORGOT_PASSWORD: Signed using HMAC-SHA256 (Symmetric Secret).
+     *   These tokens are strictly internal to user-service.
+     * 
      * @param tokenType ACCESS_TOKEN, REFRESH_TOKEN, or FORGOT_PASSWORD
      * @param subject typically the user's unique email address
-     * @param claims custom key-value pairs (e.g., token UUID 'id', user roles)
+     * @param claims custom key-value pairs (e.g., token UUID 'id'/'jti', userId, roles)
      * @return the serialized JWT string
      */
     public String generateToken(TokenType tokenType, String subject, Map<String, ?> claims) {
@@ -76,7 +86,7 @@ public class JwtUtils {
         Date expiryDate = new Date(now.getTime() + expirationMillis);
 
         // Step 4: Use JJWT 0.12.6 fluent builder to assemble the token
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 // Sets the 'sub' (subject) claim
                 .subject(subject)
                 // Adds our custom key-value map into the token payload
@@ -84,11 +94,19 @@ public class JwtUtils {
                 // Sets the 'iat' (issued at) claim to the current moment
                 .issuedAt(now)
                 // Sets the 'exp' (expiration) claim
-                .expiration(expiryDate)
-                // Cryptographically signs the header + payload using HMAC-SHA256 and our secret key
-                .signWith(getKey(tokenConfig.getSecret()), Jwts.SIG.HS256)
-                // Serializes everything into the final compacted URL-safe string format (xxx.yyy.zzz)
-                .compact();
+                .expiration(expiryDate);
+
+        // Step 5: Asymmetric vs Symmetric Signing Selection
+        if (tokenType == TokenType.ACCESS_TOKEN && rsaKeyProvider != null && rsaKeyProvider.getPrivateKey() != null) {
+            // RS256: Sign with RSA Private Key
+            builder.signWith(rsaKeyProvider.getPrivateKey(), Jwts.SIG.RS256);
+        } else {
+            // HS256: Fall back to Symmetric HMAC-SHA256
+            builder.signWith(getKey(tokenConfig.getSecret()), Jwts.SIG.HS256);
+        }
+
+        // Serializes everything into the final compacted URL-safe string format (xxx.yyy.zzz)
+        return builder.compact();
     }
 
     /**
@@ -113,19 +131,23 @@ public class JwtUtils {
      * @return the Claims payload
      */
     public Claims getAllClaimsFromToken(TokenType tokenType, String token) {
-        // Step 1: Get the corresponding secret for this token type
-        JwtConfig.TokenConfig tokenConfig = jwtConfig.getTokenConfigByType(tokenType);
-
-        // Step 2: Build the JJWT parser with the verification secret key
-        return Jwts.parser()
-                // Verify the HMAC signature using our secret key
-                .verifyWith(getKey(tokenConfig.getSecret()))
-                // Build the parser instance
-                .build()
-                // Parse the signed claims (throws ExpiredJwtException, SignatureException if invalid)
-                .parseSignedClaims(token)
-                // Return the claims payload body
-                .getPayload();
+        // Build the JJWT parser based on the cryptographic algorithm for this token type
+        if (tokenType == TokenType.ACCESS_TOKEN && rsaKeyProvider != null && rsaKeyProvider.getPublicKey() != null) {
+            // RS256: Verify using the RSA Public Key
+            return Jwts.parser()
+                    .verifyWith(rsaKeyProvider.getPublicKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } else {
+            // HS256: Verify using the Symmetric Secret Key
+            JwtConfig.TokenConfig tokenConfig = jwtConfig.getTokenConfigByType(tokenType);
+            return Jwts.parser()
+                    .verifyWith(getKey(tokenConfig.getSecret()))
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        }
     }
 
     /**

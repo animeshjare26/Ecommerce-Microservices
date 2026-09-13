@@ -55,19 +55,33 @@ spring:
     baseline-on-migrate: true
     locations: classpath:db/migration
 
-# JSON Web Token Expiration & Secret Key Configuration
-# Secrets are 256-bit cryptographic keys encoded in Base64
+# JSON Web Token Expiration & Cryptographic Key Configuration
 jwt:
+  # RSA Asymmetric 2048-bit Keypair (RS256) for Access Token signing
+  rsa:
+    private-key-path: ${JWT_RSA_PRIVATE_KEY_PATH:classpath:certs/private_key.pem}
+    public-key-path: ${JWT_RSA_PUBLIC_KEY_PATH:classpath:certs/public_key.pem}
   access:
-    # 256-bit key in Base64 (Do not commit production secrets to Git; override via ENV)
-    secret: ${JWT_ACCESS_SECRET:dGhpc0lzQVZlcnlTZWN1cmVTZWNyZXRLZXlGb3JBY2Nlc3NUb2tlbjEyMzQ1Ng==}
     expiration: ${JWT_ACCESS_EXPIRATION:15} # 15 minutes
+    # Fallback HMAC secret
+    secret: ${JWT_ACCESS_SECRET:dGhpc0lzQVZlcnlTZWN1cmVTZWNyZXRLZXlGb3JBY2Nlc3NUb2tlbjEyMzQ1Ng==}
   refresh:
     secret: ${JWT_REFRESH_SECRET:dGhpc0lzQURpZmZlcmVudFNlY3VyZVNlY3JldEtleUZvclJlZnJlc2hUb2tlbjc4OTA=}
     expiration: ${JWT_REFRESH_EXPIRATION:10080} # 7 days (in minutes)
   forgot_password:
     secret: ${JWT_FORGOT_PASSWORD_SECRET:dGhpc0lzQVNlY3VyZVNlY3JldEtleUZvckZvcmdvdFBhc3N3b3JkVG9rZW4xMTIy}
     expiration: ${JWT_FORGOT_PASSWORD_EXPIRATION:30} # 30 minutes
+
+# Netflix Eureka Service Discovery Client
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}:${random.uuid}
 
 # OpenAPI / Swagger Documentation Endpoints
 springdoc:

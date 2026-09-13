@@ -116,11 +116,13 @@ The project aims for the following four learning standards. Foundational classes
   - REST Layer: Public catalog search & admin-protected product mutation.
 
 ### Phase 2: Edge Routing, Discovery, Cart & Synchronous Resilience
-- [ ] **Step 2.1:** Create `discovery-server` with Spring Cloud Netflix Eureka.
-- [ ] **Step 2.2:** Create `api-gateway` with Spring Cloud Gateway:
-  - Custom Reactive Global Filter: Cryptographic JWT signature and expiration verification.
-  - Header Propagation: Injects `X-User-Id` and `X-User-Roles` into downstream requests.
-  - Rate Limiting: Redis-backed Token Bucket filter.
+- [x] **Step 2.1:** Create `discovery-server` with Spring Cloud Netflix Eureka.
+- [x] **Step 2.2:** Create `api-gateway` with Spring Cloud Gateway:
+  - Custom Reactive Global Filter: Cryptographic RS256 signature and expiration verification using RSA 2048-bit public key.
+  - Revocation: Redis-backed Token JTI blocklist check (`blocklist:jti:{jti}`).
+  - Header Propagation: Injects `X-User-Id`, `X-User-Email`, and `X-User-Roles` into downstream requests.
+  - Rate Limiting: Redis-backed Token Bucket filter (`KeyResolver` by user ID and client IP).
+  - Distributed Tracing: Injects and propagates `X-Correlation-Id` across request and response headers.
 - [ ] **Step 2.3:** Build `cart-service`:
   - Redis primary storage for carts with TTL.
   - OpenFeign Client calling `product-service` with Resilience4j Circuit Breaker and Fallback.

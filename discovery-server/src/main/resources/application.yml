@@ -1,0 +1,69 @@
+# =====================================================================================
+# FILE: discovery-server/src/main/resources/application.yml
+# MODULE: discovery-server (Netflix Eureka Service Registry)
+# PURPOSE: Central configuration for Eureka Registry port, self-preservation policies,
+#          eviction intervals, and standalone registry mode.
+#
+# DESIGN PATTERN / ARCHITECTURAL CONCEPT:
+# - Service Registry Pattern (Netflix Eureka Server).
+# - Standalone Registry Architecture: Configured not to register with itself.
+#
+# READING ORDER:
+# - Read PREVIOUS: pom.xml
+# - Read THIS FILE: Understand Eureka server runtime behavior and tuning.
+# - Read NEXT: DiscoveryServerApplication.java
+#
+# TRICKY INTERVIEW QUESTIONS & ARCHITECTURAL WISDOM:
+# Q1: Senior Question: Why do we set `register-with-eureka: false` and `fetch-registry: false`?
+# A1: In a standalone Eureka server deployment, the registry does not need to register
+#     with itself or fetch its own registry into a local client cache. Setting both to false
+#     prevents Eureka from throwing "Cannot execute request on any known server" error logs
+#     at startup while attempting to discover a non-existent peer!
+#     (In high-availability production clusters, these would be true to replicate with peer registries).
+#
+# Q2: Intermediate Question: What is `eviction-interval-timer-in-ms`?
+# A2: Eureka runs a background cleanup thread periodically checking for instances whose
+#     heartbeats have lapsed beyond the renewal threshold (default: 90 seconds).
+#     Setting this to 10000ms (10 seconds) in local development causes dead or restarted
+#     services to be evicted promptly from the dashboard instead of lingering for minutes.
+#
+# Q3: Beginner Intern Question: What happens if a microservice is registered with Eureka
+#     and then suddenly killed (e.g. process terminated)?
+# A3: Eureka does not receive a graceful deregistration shutdown signal. It continues listing
+#     the service until the heartbeat threshold expires (typically 3 missed heartbeats = 90s).
+#     This is why API Gateways combine Eureka with client-side load balancers that quickly
+#     retry or short-circuit failed connections using circuit breakers (Resilience4j).
+# =====================================================================================
+
+server:
+  port: ${SERVER_PORT:8761}
+
+spring:
+  application:
+    name: discovery-server
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+  client:
+    # Standalone server: do not attempt to register with a peer registry
+    register-with-eureka: false
+    # Do not cache registry data locally; this server IS the registry
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    # Disable self-preservation in development so dead instances are evicted quickly
+    # (In production, leave this TRUE to prevent network blips from dropping healthy instances)
+    enable-self-preservation: false
+    # Eviction run frequency in milliseconds (clean up unregistered instances every 10s)
+    eviction-interval-timer-in-ms: 10000
+    # Expected renewal percentage threshold (85%)
+    renewal-percent-threshold: 0.85
+
+# Expose Actuator endpoints for health monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

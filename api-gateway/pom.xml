@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+=====================================================================================
+FILE: api-gateway/pom.xml
+MODULE: api-gateway (Spring Cloud Reactive API Gateway)
+PURPOSE: Defines Maven dependencies, Spring Cloud release trains, Netty reactive engine,
+         Redis reactive drivers, and JJWT 0.12.6 libraries for edge routing and security.
+
+DESIGN PATTERN / ARCHITECTURAL MECHANISM:
+- API Gateway Pattern (Single Entry Point Ingress Proxy).
+- Reactive Non-Blocking Event-Loop Architecture (Project Reactor + Netty).
+- Edge Security: Cryptographic RS256 Public Key Verification + Header Mutation.
+
+EXECUTION FLOW POSITION:
+- The single public port (8080) facing the outside world (React frontend, mobile apps, Postman).
+- First stop in every client request lifecycle before downstream microservices.
+
+READING ORDER:
+- Read THIS FILE first to inspect reactive dependencies (Notice NO spring-boot-starter-web!).
+- Read NEXT: src/main/resources/application.yml
+- Read NEXT: src/main/java/com/ecommerce/gateway/security/RsaKeyProvider.java
+- Read NEXT: src/main/java/com/ecommerce/gateway/filter/JwtAuthenticationFilter.java
+
+TRICKY INTERVIEW QUESTIONS & ARCHITECTURAL WISDOM:
+Q1: Senior Question: Why does adding `spring-boot-starter-web` BREAK Spring Cloud Gateway?
+A1: Fundamental architectural conflict! `spring-boot-starter-web` pulls in traditional
+    Servlet APIs and an embedded Apache Tomcat container (blocking, thread-per-request model).
+    Spring Cloud Gateway is built entirely on Spring WebFlux, Project Reactor, and Netty
+    (non-blocking, event-driven reactive event loop). If both are on the classpath, Spring
+    Cloud Gateway detects the Servlet environment and throws a startup failure:
+    `"Spring Cloud Gateway requires WebFlux, but Spring MVC was found on classpath!"`
+
+Q2: Intermediate Question: How does Netty handle 50,000 concurrent requests with only 16 worker threads?
+A2: Netty uses the **Reactor Pattern** with non-blocking I/O (epoll/kqueue/NIO selectors).
+    Instead of assigning one heavy OS thread (1MB RAM stack) per HTTP request like Tomcat,
+    Netty worker threads never block waiting for socket reads or downstream network packets.
+    Threads register callbacks and immediately switch to process other incoming packets.
+    This enables handling tens of thousands of concurrent connections with minimal RAM!
+
+Q3: Beginner Intern Question: Why does the Gateway only have `public_key.pem` and not `private_key.pem`?
+A3: Zero-Trust Security! The Gateway's only job is to VERIFY that the token is genuine.
+    Verification requires ONLY the Public Key. If the Gateway held the Private Key and was
+    compromised via an RCE vulnerability, an attacker could sign new tokens as ADMIN.
+    With RS256, the Private Key remains safely isolated inside `user-service`!
+=====================================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.ecommerce</groupId>
+    <artifactId>api-gateway</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>api-gateway</name>
+    <description>Spring Cloud Gateway for E-Commerce Microservices Platform</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <spring-cloud.version>2023.0.3</spring-cloud.version>
+        <jjwt.version>0.12.6</jjwt.version>
+    </properties>
+
+    <dependencies>
+        <!-- Spring Cloud Gateway (Reactive Non-Blocking Netty Engine) -->
+        <!-- DO NOT add spring-boot-starter-web; Gateway uses WebFlux! -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+
+        <!-- Netflix Eureka Client for dynamic instance discovery and lb:// routing -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+
+        <!-- Reactive Redis for Token-Bucket Rate Limiting and JTI Blocklist checking -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+        </dependency>
+
+        <!-- Modern JJWT 0.12.6 for Asymmetric RS256 Cryptographic Verification -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Actuator for health checks and runtime route introspection (/actuator/gateway/routes) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Lombok for clean boilerplate elimination -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Testing Starters -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Project Reactor Test tools (StepVerifier) for testing reactive WebFlux pipelines -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Cloud Release Train (BOM) -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <!-- Spring Boot Maven Plugin for Fat Jar packaging -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

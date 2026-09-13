@@ -41,6 +41,7 @@ A2: `jjwt-api` contains only interfaces and is used at compile time. `jjwt-impl`
 
     <properties>
         <java.version>21</java.version>
+        <spring-cloud.version>2023.0.3</spring-cloud.version>
         <jjwt.version>0.12.6</jjwt.version>
         <springdoc.version>2.6.0</springdoc.version>
     </properties>
@@ -128,6 +129,12 @@ A2: `jjwt-api` contains only interfaces and is used at compile time. `jjwt-impl`
             <version>${springdoc.version}</version>
         </dependency>
 
+        <!-- Spring Cloud Netflix Eureka Client for dynamic service registration and discovery -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+
         <!-- Testing Starters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -140,6 +147,19 @@ A2: `jjwt-api` contains only interfaces and is used at compile time. `jjwt-impl`
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Cloud Release Train (BOM - Bill of Materials) -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>

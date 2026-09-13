@@ -19,7 +19,14 @@ spring:
   flyway:
     enabled: false # H2 creates schema automatically via ddl-auto for unit tests
 
+eureka:
+  client:
+    enabled: false
+
 jwt:
+  rsa:
+    private-key-path: classpath:certs/private_key.pem
+    public-key-path: classpath:certs/public_key.pem
   access:
     secret: dGhpc0lzQVZlcnlTZWN1cmVTZWNyZXRLZXlGb3JBY2Nlc3NUb2tlbjEyMzQ1Ng==
     expiration: 15

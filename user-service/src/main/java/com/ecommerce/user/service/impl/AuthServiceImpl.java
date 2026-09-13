@@ -108,11 +108,17 @@ public class AuthServiceImpl implements AuthService {
         UUID accessJti = UUID.randomUUID();
         UUID refreshJti = UUID.randomUUID();
 
-        // Step 3: Create the Access Token (short-lived, contains user email, UUID, and assigned roles)
+        // Step 3: Create the Access Token (short-lived, contains user email, userId, jti, and assigned roles)
+        Map<String, Object> accessClaims = new java.util.HashMap<>();
+        accessClaims.put("id", accessJti.toString());
+        accessClaims.put("jti", accessJti.toString());
+        accessClaims.put("userId", userResponse.getId().toString());
+        accessClaims.put("roles", userResponse.getRoles());
+
         String accessToken = jwtUtils.generateToken(
                 TokenType.ACCESS_TOKEN,
                 userResponse.getEmail(),
-                Map.of("id", accessJti.toString(), "roles", userResponse.getRoles())
+                accessClaims
         );
 
         // Step 4: Create the Refresh Token (longer-lived, used only to get new access tokens)
@@ -170,11 +176,17 @@ public class AuthServiceImpl implements AuthService {
         UUID accessJti = UUID.randomUUID();
         UUID refreshJti = UUID.randomUUID();
 
-        // Step 6: Sign the Access Token
+        // Step 6: Sign the Access Token (RS256 asymmetric)
+        Map<String, Object> loginAccessClaims = new java.util.HashMap<>();
+        loginAccessClaims.put("id", accessJti.toString());
+        loginAccessClaims.put("jti", accessJti.toString());
+        loginAccessClaims.put("userId", userDetails.getId().toString());
+        loginAccessClaims.put("roles", roles);
+
         String accessToken = jwtUtils.generateToken(
                 TokenType.ACCESS_TOKEN,
                 userDetails.getEmail(),
-                Map.of("id", accessJti.toString(), "roles", roles)
+                loginAccessClaims
         );
 
         // Step 7: Sign the Refresh Token
@@ -250,12 +262,18 @@ public class AuthServiceImpl implements AuthService {
 
         List<String> roles = user.getRoles().stream().map(r -> r.getName()).collect(Collectors.toList());
 
-        // Step 7: Generate a BRAND NEW Access Token
+        // Step 7: Generate a BRAND NEW Access Token (RS256 asymmetric)
         UUID newAccessJti = UUID.randomUUID();
+        Map<String, Object> refreshAccessClaims = new java.util.HashMap<>();
+        refreshAccessClaims.put("id", newAccessJti.toString());
+        refreshAccessClaims.put("jti", newAccessJti.toString());
+        refreshAccessClaims.put("userId", user.getId() != null ? user.getId().toString() : "");
+        refreshAccessClaims.put("roles", roles);
+
         String newAccessToken = jwtUtils.generateToken(
                 TokenType.ACCESS_TOKEN,
                 user.getEmail(),
-                Map.of("id", newAccessJti.toString(), "roles", roles)
+                refreshAccessClaims
         );
 
         // Step 8: Generate a BRAND NEW rotated Refresh Token
