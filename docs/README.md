@@ -110,14 +110,44 @@
 ### ☕ Module 1: Java Foundations
 1. [OOP, SOLID, and Clean Code](01-java-foundations/01_OOP_SOLID_AND_CLEAN_CODE.md)
    - Encapsulation, Abstraction, Inheritance, Polymorphism in backend services.
-   - SOLID principles applied to microservice architectures.
-2. [Open Module Roadmap & Syllabus](01-java-foundations/README.md)
+   - S.O.L.I.D. principles applied to microservices without over-engineering.
+2. [Collections, HashMap Internals, and equals()/hashCode()](01-java-foundations/02_COLLECTIONS_HASHMAP_INTERNALS_EQUALS_HASHCODE.md)
+   - Power-of-2 bitwise bucket index math, hash collisions, load factor (0.75).
+   - Red-Black treeification (`TREEIFY_THRESHOLD = 8`); `ConcurrentHashMap` bucket-level striping.
+3. [Exception Handling, Checked vs. Unchecked, and Optional](01-java-foundations/03_EXCEPTION_HANDLING_UNCHECKED_VS_CHECKED_AND_OPTIONAL.md)
+   - Spring `@Transactional` silent commit trap on checked exceptions.
+   - Stack frame walking overhead in `fillInStackTrace()`; 3 deadly `Optional` anti-patterns.
+4. [Java Concurrency, Volatile, Synchronization, and Thread Pools](01-java-foundations/04_CONCURRENCY_THREADS_VOLATILE_AND_SYNCHRONIZATION.md)
+   - Java Memory Model (JMM), `happens-before`, memory barriers, and CPU cache coherence.
+   - Production OOM dangers of `Executors.newFixedThreadPool()` unbounded queues.
+   - `ThreadLocal` memory leaks in Tomcat/Netty worker pools.
+5. [JVM Memory Model, Garbage Collection, and OOM Diagnostics](01-java-foundations/05_JVM_MEMORY_MODEL_GC_ALGORITHMS_AND_OOM_ANALYSIS.md)
+   - Heap (Eden, Survivor, Tenured), Metaspace, and Direct Off-Heap memory.
+   - G1 region-based GC vs. ZGC sub-millisecond pauses; Eclipse MAT heap dump analysis.
+   - Container cgroup memory awareness in Docker/Kubernetes.
+6. [Modern Java: Virtual Threads (Loom) vs. Reactive Netty](01-java-foundations/06_MODERN_JAVA_VIRTUAL_THREADS_PROJECT_LOOM_VS_REACTIVE.md)
+   - 1,000,000 Virtual Threads on `ForkJoinPool` carrier threads; Continuation unmounting.
+   - The thread pinning bug on `synchronized` blocks; Spring MVC + Loom vs. WebFlux + Netty.
+   - Java Records and Pattern matching for switch.
 
 ---
 
-### 🌱 Module 2: Spring Boot Foundations — Planned
-[Open Module Roadmap](02-spring-boot-foundations/README.md)  
-Read in order: IoC/DI → Auto-configuration → MVC → Filters/AOP → Validation → Transactions.
+### 🌱 Module 2: Spring Boot Foundations
+1. [The Spring IoC Container, Dependency Injection, and Bean Lifecycle](02-spring-boot-foundations/01_IOC_CONTAINER_DEPENDENCY_INJECTION_AND_BEAN_LIFECYCLE.md)
+   - `BeanFactory` vs `ApplicationContext`; Why constructor injection is the gold standard.
+   - Complete 8-stage Bean lifecycle and where AOP dynamic proxies are born.
+   - Resolving circular dependencies and why Spring Boot 2.6+ banned them.
+2. [Spring Boot Auto-Configuration, Conditionals, and Starters](02-spring-boot-foundations/02_SPRING_BOOT_AUTO_CONFIGURATION_AND_CONDITIONALS.md)
+   - How `@SpringBootApplication` works without magic; `@ConditionalOnMissingBean`.
+   - Spring Boot 2.x `spring.factories` vs Spring Boot 3.x `AutoConfiguration.imports`.
+3. [The Spring MVC Request Lifecycle: Filters, Interceptors, DispatcherServlet, AOP](02-spring-boot-foundations/03_SPRING_MVC_REQUEST_LIFECYCLE_FILTERS_INTERCEPTORS_AOP.md)
+   - The exact journey of an HTTP request from TCP socket to Controller.
+   - Servlet Filters vs HandlerInterceptors vs Spring AOP Aspect decision matrix.
+   - Why reading the HTTP request body twice throws `HttpMessageNotReadableException`.
+4. [Spring Transaction Management, Dynamic Proxies, and Self-Invocation](02-spring-boot-foundations/04_SPRING_TRANSACTION_MANAGEMENT_PROXIES_AND_SELF_INVOCATION.md)
+   - How `@Transactional` wraps methods in CGLIB subclass proxies.
+   - The infamous self-invocation bug where `this.method()` bypasses transaction boundaries.
+   - Transaction propagation (`REQUIRED` vs `REQUIRES_NEW`) and rollback rules.
 
 ---
 
