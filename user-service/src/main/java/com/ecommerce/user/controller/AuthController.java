@@ -163,7 +163,8 @@ public class AuthController {
 
     /**
      * Endpoint: POST /api/auth/reset-password
-     * Purpose: Updates password using the single-use reset token and revokes all active sessions.
+     * Purpose: Updates password using a time-limited reset token and revokes refresh tokens.
+     * Existing access tokens remain valid until expiry; reset tokens are reusable during their validity period in this version.
      * 
      * @param request JSON body with reset token and new password
      * @return ResponseEntity confirming password update

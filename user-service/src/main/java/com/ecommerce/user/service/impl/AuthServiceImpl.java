@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  * EXECUTION FLOW (IN & OUT OF AUTHENTICATION):
  * 1. SIGNUP:
  *    - Validates email doesn't exist -> Hashes password with BCrypt -> Creates User with ROLE_USER.
- *    - Generates Access Token (15 min) + Refresh Token (7 days) with unique UUID JTI.
+ *    - Generates Access Token (15 min) + Refresh Token (7 days) with a unique UUID stored in a custom `id` claim.
  *    - Saves Refresh Token to whitelist table in PostgreSQL -> Returns UserResponseDto with tokens.
  * 
  * 2. LOGIN:
@@ -56,8 +56,8 @@ import java.util.stream.Collectors;
  * 
  * 3. REFRESH TOKEN ROTATION (CRITICAL SECURITY MECHANISM):
  *    - Validates refresh token signature via JwtUtils.
- *    - Extracts token JTI claim and looks it up in `refresh_tokens` table where `is_revoked = false`.
- *    - If already revoked: REPLAY ATTACK! Immediately throws UnauthorizedException.
+ *    - Extracts the custom token identifier and looks it up in `refresh_tokens` where `is_revoked = false`.
+ *    - If already revoked: treats the request as a replay attempt and throws UnauthorizedException.
  *    - Marks current refresh token as REVOKED (`isRevoked = true`).
  *    - Issues a BRAND NEW Access Token and a BRAND NEW Refresh Token.
  *    - Saves new Refresh Token to DB -> Returns rotated tokens to user.
@@ -104,7 +104,7 @@ public class AuthServiceImpl implements AuthService {
         // Step 1: Create user record in PostgreSQL (validates uniqueness, hashes password, assigns role)
         UserResponseDto userResponse = userService.createUser(signUpRequestDto);
 
-        // Step 2: Generate unique UUIDs (JTI - JWT ID) for each token to enable individual token tracking
+        // Step 2: Generate unique UUIDs for application-specific token tracking.
         UUID accessJti = UUID.randomUUID();
         UUID refreshJti = UUID.randomUUID();
 
@@ -166,7 +166,7 @@ public class AuthServiceImpl implements AuthService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        // Step 5: Generate unique JTIs for the new tokens
+        // Step 5: Generate unique token identifiers for the new tokens.
         UUID accessJti = UUID.randomUUID();
         UUID refreshJti = UUID.randomUUID();
 
@@ -228,7 +228,7 @@ public class AuthServiceImpl implements AuthService {
         String jti = claims.get("id");
         String email = claims.get("subject");
 
-        // Step 3: Check PostgreSQL whitelist: is this JTI active and unrevoked?
+        // Step 3: Check PostgreSQL allow-list: is this custom token identifier active and unrevoked?
         RefreshToken storedToken = refreshTokenRepository.findByTokenJtiAndIsRevokedFalse(jti)
                 .orElseThrow(() -> new UnauthorizedException("Refresh token is revoked or already used (Replay attack detected!)"));
 
@@ -288,7 +288,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * Generates a single-use password recovery token and returns a reset link.
+     * Generates a time-limited password recovery token and returns a reset link for local development.
+     * This version does not persist or consume the token identifier, so the token is reusable until it expires.
      */
     @Override
     @Transactional(readOnly = true)
@@ -319,6 +320,7 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * Resets the user password after verifying the reset token and revokes all active refresh tokens.
+     * Existing access tokens remain valid until their configured expiration.
      */
     @Override
     @Transactional
@@ -342,7 +344,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Step 5: SECURITY BEST PRACTICE!
         // When a user resets their password, REVOKE ALL existing refresh tokens!
-        // This instantly boots out any malicious attacker who had an active session.
+        // This blocks future refreshes. It does not invalidate already-issued access tokens.
         refreshTokenRepository.revokeAllByUserEmail(user.getEmail());
         log.info("Password reset successfully and all active refresh tokens revoked for user: {}", user.getEmail());
     }

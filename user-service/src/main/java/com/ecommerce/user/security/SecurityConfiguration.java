@@ -66,8 +66,9 @@ import java.util.List;
  * A2: Cross-Site Request Forgery (CSRF) exploits browsers automatically attaching ambient credentials 
  *     (session cookies) to cross-origin requests. In our stateless REST architecture, we do not use 
  *     cookies. Clients must explicitly attach the JWT in the `Authorization: Bearer <token>` header. 
- *     Browsers will NEVER automatically attach custom request headers to foreign cross-origin links, 
- *     making CSRF attacks physically impossible and CSRF tokens redundant overhead.
+ *     Browsers do not automatically attach an Authorization header to cross-site form submissions.
+ *     Therefore CSRF protection is normally unnecessary only while this API remains bearer-header based
+ *     and does not adopt cookie-based authentication; it is not a universal guarantee.
  * 
  * Q3: How does BCrypt work and why is it better than SHA-256 or MD5 for passwords?
  * A3: Fast hashing algorithms like SHA-256 or MD5 are designed for high throughput (checksumming gigabytes). 
@@ -106,8 +107,9 @@ import java.util.List;
  *      automatically sets @CreatedBy and @LastModifiedBy without writing manual code.
  * 
  * 5. @RequiredArgsConstructor (Lombok) vs @Autowired:
- *    - @Autowired on fields is considered an ANTI-PATTERN in modern Spring because it hides dependencies, 
- *      makes unit testing difficult without starting Spring, and allows circular dependency bugs.
+ *    - Constructor injection is preferred over field injection because dependencies are explicit,
+ *      immutable, and easy to supply in unit tests. The legacy field injection in AuthTokenFilter
+ *      should be migrated separately for consistency; this configuration already uses constructor injection.
  *    - @RequiredArgsConstructor generates a constructor for all `final` fields at compile-time. 
  *      Spring automatically uses this single constructor to inject dependencies (Constructor Injection), 
  *      which is immutable, fail-fast, and enables easy mocking in unit tests (e.g. new Service(mockRepo)).

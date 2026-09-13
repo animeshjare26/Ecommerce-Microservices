@@ -51,8 +51,8 @@ import java.util.stream.Collectors;
  *      of all queried entities for dirty-checking. When the method completes, any modified fields 
  *      are automatically written via SQL UPDATE statements, and the transaction commits.
  *    - @Transactional(readOnly = true): Tells Hibernate this is a pure read operation. Hibernate 
- *      skips memory snapshotting and dirty-checking, saving significant CPU and heap RAM! 
- *      In production with read replicas, the JDBC driver routes readOnly queries to secondary replicas.
+ *      can skip dirty-checking work, saving CPU and heap RAM. It does not automatically route queries
+ *      to secondary replicas; that needs explicit datasource-routing configuration.
  * 
  * 3. Self-Invocation Pitfall with @Transactional:
  *    - If Method A (non-transactional) calls Method B (@Transactional) in the same class:

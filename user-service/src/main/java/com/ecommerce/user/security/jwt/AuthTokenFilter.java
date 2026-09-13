@@ -62,8 +62,8 @@ import java.io.IOException;
  * A2: Regular servlet filters run outside of Spring MVC's DispatcherServlet. If an exception 
  *     is thrown inside a filter, Spring's `@RestControllerAdvice` cannot catch it by default. 
  *     By autowiring `HandlerExceptionResolver` and calling `resolveException(request, response, null, e)`, 
- *     we route filter errors directly into our `GlobalExceptionHandler` so the client receives 
- *     our standard `GenericResponse.error()` JSON format!
+ *     we give MVC exception resolvers an opportunity to format filter errors. Security failures handled
+ *     by Spring Security's entry points or access-denied handlers still bypass controller advice.
  * =====================================================================================
  */
 // Registers this class as a Spring-managed singleton component bean
@@ -150,7 +150,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             log.error("Authentication filter exception during token processing: {}", e.getMessage());
-            // Step 12: Hand the exception to Spring's HandlerExceptionResolver so GlobalExceptionHandler formats it
+            // Step 12: Give MVC exception resolvers an opportunity to format this filter exception.
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
     }

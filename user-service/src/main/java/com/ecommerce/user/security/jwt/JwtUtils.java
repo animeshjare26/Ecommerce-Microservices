@@ -35,7 +35,7 @@ import java.util.Map;
  *      "sub": "user@example.com",        // Subject: user identifier
  *      "iat": 1726214400,                // Issued At timestamp
  *      "exp": 1726215300,                // Expiration timestamp
- *      "id": "c1f7a2d4-...",             // JTI: unique token ID for revocation
+ *      "id": "c1f7a2d4-...",             // Application-specific token identifier
  *      "roles": ["ROLE_USER"]            // Custom claims (roles, permissions)
  *    }
  * 

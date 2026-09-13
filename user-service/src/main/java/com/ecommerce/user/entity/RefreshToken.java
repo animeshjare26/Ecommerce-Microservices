@@ -12,7 +12,7 @@ import java.time.OffsetDateTime;
  * =====================================================================================
  * FILE: RefreshToken.java
  * MODULE: user-service
- * PURPOSE: Stores active and revoked refresh token identifiers (JTI) for token rotation.
+ * PURPOSE: Stores active and revoked application-specific refresh-token identifiers for token rotation.
  * 
  * DESIGN PATTERN: Token Revocation / Whitelist Pattern.
  * 
@@ -20,9 +20,8 @@ import java.time.OffsetDateTime;
  * Q1: What is "Refresh Token Rotation" and why is it critical?
  * A1: Every time a client sends a refresh token to get a new access token, the server 
  *     invalidates (revokes) the used refresh token and issues a completely new refresh token. 
- *     If an attacker steals a refresh token and both the user and attacker try to use it, 
- *     the server detects reuse of an invalidated token and immediately invalidates ALL sessions 
- *     for that user!
+ *     If an attacker reuses a refresh token after it was rotated, the server rejects that token.
+ *     This implementation does not automatically revoke the user's other refresh tokens.
  * =====================================================================================
  */
 @Entity

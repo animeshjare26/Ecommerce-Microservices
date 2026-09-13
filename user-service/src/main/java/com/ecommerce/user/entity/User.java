@@ -69,8 +69,9 @@ import java.util.Set;
  * 
  * 5. @ManyToMany with @JoinTable:
  *    - Creates an intermediary join table (`user_roles`) connecting `users.id` and `roles.id`.
- *    - FetchType.EAGER vs FetchType.LAZY: EAGER loads associated roles immediately using a SQL JOIN, 
- *      preventing LazyInitializationException during authentication checks.
+ *    - FetchType.EAGER vs FetchType.LAZY: EAGER makes associated roles available when the entity is loaded,
+ *      but does not guarantee Hibernate will use one SQL JOIN. It avoids lazy-loading issues for this
+ *      authentication-oriented entity; use JOIN FETCH or @EntityGraph when a query requires a joined fetch.
  * =====================================================================================
  */
 @Entity

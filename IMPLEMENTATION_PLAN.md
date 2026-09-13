@@ -8,8 +8,8 @@ Welcome to the **E-Commerce Microservices Mastery Repository**. This document se
 
 This repository is built not just as a portfolio piece, but as an **interactive interview-ready textbook in code form**. 
 
-### 1.1 The Pedagogical Code Standards (Mandatory for Every File)
-Every single file created in this project must adhere to four strict learning standards:
+### 1.1 The Pedagogical Code Standards (Target for Every File)
+The project aims for the following four learning standards. Foundational classes are documented in depth; smaller DTO, enum, and exception classes may currently have concise headers and will be expanded over time:
 1. **File Purpose & Architectural Concept Header:**
    - At the top of every file, state:
      - **File Purpose:** What this file does in the microservice.
@@ -83,7 +83,7 @@ Every single file created in this project must adhere to four strict learning st
 
 | Microservice | Port | Primary Storage | Key Responsibilities | Key Events Handled |
 |---|---|---|---|---|
-| **`identity-service`** | `8081` | PostgreSQL (`identity_db`) | User Registration, Password Hashing (`BCrypt`), JWT Access & Refresh Token issuance, Profile & Address management | Publishes: `UserRegisteredEvent`<br/>Consumes: None |
+| **`identity-service`** | `8081` | PostgreSQL (`identity_db`) | User Registration, Password Hashing (`BCrypt`), JWT Access & Refresh Token issuance. Profile/address management is planned, not yet implemented. | `UserRegisteredEvent` publication is planned, not yet implemented.<br/>Consumes: None |
 | **`product-service`** | `8082` | PostgreSQL (`product_db`) + Redis | Product catalog, Category hierarchy, SKU master data, Redis read-through caching | Publishes: `ProductPriceUpdatedEvent`<br/>Consumes: None |
 | **`inventory-service`** | `8083` | PostgreSQL (`inventory_db`) | Stock tracking, atomic reservations, optimistic concurrency control (`@Version`) | Publishes: `InventoryReservedEvent`, `InventoryReservationFailedEvent`<br/>Consumes: `OrderCreatedEvent`, `PaymentFailedEvent` |
 | **`cart-service`** | `8084` | Redis (In-Memory Key-Value) | Ephemeral shopping carts (`cart:{userId}`), fast session updates with TTL | Publishes: None<br/>Consumes: `OrderConfirmedEvent` (clears cart) |

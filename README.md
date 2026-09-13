@@ -54,7 +54,7 @@ For the complete technical blueprint, phased roadmap, database breakdown, reques
 ---
 
 ## 🎓 Code Pedagogical Standards
-Every file in this project strictly follows four learning rules:
+The project aims to follow four learning rules; foundational classes currently contain the deepest explanations, while smaller support classes are being expanded incrementally:
 1. **File Concept & Reading Order Header:** Explains what the file does, its design pattern, its exact position in the execution flow, and which file to read next.
 2. **Deep In-Line Explanations:** Explaining **WHAT** each line/annotation does and **WHY** it was chosen over alternatives.
 3. **Tricky Interview Q&A Callouts:** Real-world interview questions from top tech companies embedded directly with answers in the code.

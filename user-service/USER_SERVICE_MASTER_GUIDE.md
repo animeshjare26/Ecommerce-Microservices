@@ -73,7 +73,7 @@ Contains the actual statement of truth (claims) about the user:
 - `sub` (Subject): The user identifier (email).
 - `iat` (Issued At): Unix epoch timestamp when token was created.
 - `exp` (Expiration): Unix epoch timestamp when token expires (15 mins for access token).
-- `id` (JTI - JWT ID): Unique UUID for tracking and revocation.
+- `id` (custom token identifier): Unique UUID used by this application to track refresh-token records. It is not the registered JWT `jti` claim.
 - `roles`: Custom claim containing user's security authorities.
 
 ### Part 3: Signature
@@ -168,11 +168,11 @@ Client
 - **Refresh Token (7-Day Expiry):**
   - Never sent on regular API calls. Sent ONLY to `POST /api/auth/refresh`.
   - Used strictly to generate a new Access Token when the old one expires.
-  - Semi-stateful: Its unique ID (`JTI`) is saved in the `refresh_tokens` database table.
+  - Semi-stateful: Its custom `id` claim is saved in the `refresh_tokens` database table.
 
 ---
 
-### 4.2 How Refresh Token Rotation Blocks Replay Attacks
+### 4.2 How Refresh Token Rotation Detects Replay Attempts
 
 ```mermaid
 sequenceDiagram
@@ -195,7 +195,7 @@ sequenceDiagram
     Hacker->>Auth: POST /auth/refresh (RefreshToken #1 - Stolen earlier!)
     Auth->>DB: Check RefreshToken #1 (is_revoked == false?)
     DB-->>Auth: Found, but is_revoked = TRUE! (Token was already used!)
-    Note over Auth: 🚨 REPLAY ATTACK DETECTED!
+    Note over Auth: 🚨 REPLAY ATTEMPT DETECTED!
     Auth-->>Hacker: HTTP 401 Unauthorized ("Refresh token is revoked or already used!")
 ```
 
@@ -254,7 +254,7 @@ sequenceDiagram
 - **Key Concepts:**
   - `authenticationManager.authenticate()`: Coordinates authentication across registered providers.
   - Refresh Token Rotation: Invalidates used refresh token and issues newly minted access and refresh tokens.
-  - Password Reset Token Revocation: When a user resets their password, `refreshTokenRepository.revokeAllByUserEmail()` is invoked, instantly kicking out all active sessions on other devices!
+  - Password Reset Session Limitation: When a user resets their password, `refreshTokenRepository.revokeAllByUserEmail()` blocks future token refreshes. Existing access tokens remain valid until their normal expiry, so this is not immediate access-token revocation.
 
 ### 5.7 `GenericResponse.java`
 - **Location:** `com.ecommerce.user.utils`
@@ -284,11 +284,11 @@ Spring Security uses `SecurityContextHolder`, which delegates to a `ThreadLocal`
 **Answer:**
 Pure stateless JWTs cannot be revoked before expiration without server-side tracking. We solve this through two mechanisms:
 1. **Short Access Token Lifespan (15 mins):** Limits the exposure window.
-2. **JTI (JWT ID) Whitelist/Blacklist:** Every token has a unique UUID JTI. Refresh tokens are tracked in our `refresh_tokens` database table. On logout or password reset, we mark the refresh token as revoked (`isRevoked = true`), blocking any new access tokens from being issued. When we introduce the API Gateway in Phase 2, revoked access tokens are stored in a Redis blocklist for instant edge rejection!
+2. **Refresh-token identifier allow-list:** Each refresh token has a UUID in this application's custom `id` claim, and active refresh-token identifiers are tracked in the `refresh_tokens` database table. Password reset revokes stored refresh tokens, blocking future refreshes; this version has no logout endpoint and does not block already-issued access tokens. An API-gateway Redis access-token blocklist is planned for a later phase.
 
 ### Q3: What is the N+1 query problem when loading a User and their Roles?
 **Answer:**
-If `User.roles` is configured with `FetchType.LAZY`, calling `user.getRoles()` triggers a separate `SELECT` query for the roles of that specific user. If you fetch 50 users, Hibernate executes 1 query for users + 50 queries for roles = 51 queries (N+1)! In `user-service`, we fetch roles eagerly using `FetchType.EAGER` or `JOIN FETCH` / `@EntityGraph` in custom JPQL queries, loading users and roles in a single database join query!
+If `User.roles` is configured with `FetchType.LAZY`, calling `user.getRoles()` can trigger a separate `SELECT` query for each user. If you fetch 50 users, that can become 1 query for users + 50 role queries = 51 queries (N+1). This service currently uses `FetchType.EAGER` to make roles available during authentication; EAGER does not guarantee one SQL join or eliminate N+1 for collection queries. Use `JOIN FETCH` or `@EntityGraph` on a specific repository query when one joined fetch is required.
 
 ---
 
@@ -324,11 +324,10 @@ If `User.roles` is configured with `FetchType.LAZY`, calling `user.getRoles()` t
 
 ### 7.7 Transactions: `@Transactional` vs. `@Transactional(readOnly = true)`
 - **`@Transactional`:** Opens transaction, enables dirty-checking snapshots, commits on success, rollbacks on unchecked exceptions.
-- **`@Transactional(readOnly = true)`:** Tells Hibernate to skip memory snapshots and dirty-checking, boosting read performance and enabling queries to route to database read-replicas.
+- **`@Transactional(readOnly = true)`:** Signals a read-only transaction and can reduce Hibernate dirty-checking work. It does not by itself route queries to read replicas; that requires datasource-routing infrastructure.
 
 ### 7.8 Lombok Annotations (Compile-Time AST Manipulation)
 - **`@RequiredArgsConstructor`:** Generates constructor for all `final` fields at compile time, enabling clean **Constructor Dependency Injection**.
 - **`@Getter` / `@Setter`:** Generates getters/setters in bytecode, removing boilerplate.
 - **`@Builder`:** Implements GoF Builder Pattern for fluent object creation.
 - **`@Slf4j`:** Generates an SLF4J Logger instance automatically.
-
