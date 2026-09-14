@@ -12,18 +12,22 @@ import java.util.Set;
  * =====================================================================================
  * FILE: product-service/.../security/UserContext.java
  * MODULE: product-service (Product Catalog & Category Microservice)
- * PURPOSE: ThreadLocal holder for downstream user identity propagated by API Gateway.
  *
- * DESIGN PATTERN / ARCHITECTURAL CONCEPT:
- * - Thread-Local Storage Pattern: Allows service layers to access authenticated caller
- *   identity (`userId`, `roles`) without polluting every method signature with HttpServletRequest.
+ * WHAT IS THIS CLASS AND WHY DO WE NEED IT?
+ * -------------------------------------------------------------------------------------
+ * Stores the authenticated user's identity (`userId`, `email`, `roles`) for the duration
+ * of the current HTTP request.
  *
- * TRICKY INTERVIEW QUESTIONS & ARCHITECTURAL WISDOM:
- * Q: Why is `UserContext.clear()` mandatory inside an `afterCompletion()` interceptor?
- * A: Application servers (Tomcat) use thread pools. If you don't call `ThreadLocal.remove()`
- *    when the request finishes, the pooled worker thread retains the previous user's credentials!
- *    A subsequent request allocated to the same thread could leak identity or inherit permissions
- *    (ThreadLocal memory leak and security breach).
+ * WHY USE THREADLOCAL?
+ * 1. CLEAN ARCHITECTURE:
+ *    Instead of passing `HttpServletRequest` or `userId` as an argument through every single
+ *    controller, service, and repository method, code anywhere on the current request thread
+ *    can simply call `UserContext.getUserId()`.
+ *
+ * 2. CRITICAL SAFETY RULE (MUST CALL clear()):
+ *    Tomcat reuses worker threads from a thread pool. When an HTTP request completes,
+ *    `UserContext.clear()` MUST be called. Otherwise, a subsequent user request assigned
+ *    to that same thread would accidentally inherit the previous user's credentials!
  * =====================================================================================
  */
 public class UserContext {

@@ -68,7 +68,7 @@ class JwtAuthenticationFilterTest {
     @Test
     @DisplayName("filter() - Whitelisted path should bypass JWT verification")
     void testWhitelistedPath_BypassesAuth() {
-        MockServerHttpRequest request = MockServerHttpRequest.get("/api/v1/auth/login").build();
+        MockServerHttpRequest request = MockServerHttpRequest.get("/api/auth/login").build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         StepVerifier.create(filter.filter(exchange, chain))
@@ -81,7 +81,7 @@ class JwtAuthenticationFilterTest {
     @Test
     @DisplayName("filter() - Protected path without Authorization header should return 401")
     void testProtectedPath_MissingAuthHeader_Returns401() {
-        MockServerHttpRequest request = MockServerHttpRequest.get("/api/v1/users/me").build();
+        MockServerHttpRequest request = MockServerHttpRequest.get("/api/users/me").build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         StepVerifier.create(filter.filter(exchange, chain))
@@ -108,7 +108,7 @@ class JwtAuthenticationFilterTest {
         // Mock Redis: JTI is NOT in blocklist
         when(redisTemplate.hasKey("blocklist:jti:" + jti)).thenReturn(Mono.just(false));
 
-        MockServerHttpRequest request = MockServerHttpRequest.get("/api/v1/users/me")
+        MockServerHttpRequest request = MockServerHttpRequest.get("/api/users/me")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
@@ -143,7 +143,7 @@ class JwtAuthenticationFilterTest {
         // Mock Redis: JTI IS in blocklist
         when(redisTemplate.hasKey("blocklist:jti:" + jti)).thenReturn(Mono.just(true));
 
-        MockServerHttpRequest request = MockServerHttpRequest.get("/api/v1/users/me")
+        MockServerHttpRequest request = MockServerHttpRequest.get("/api/users/me")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
@@ -176,7 +176,7 @@ class JwtAuthenticationFilterTest {
                 .signWith(otherKeyPair.getPrivate(), Jwts.SIG.RS256)
                 .compact();
 
-        MockServerHttpRequest request = MockServerHttpRequest.get("/api/v1/users/me")
+        MockServerHttpRequest request = MockServerHttpRequest.get("/api/users/me")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + rogueToken)
                 .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);

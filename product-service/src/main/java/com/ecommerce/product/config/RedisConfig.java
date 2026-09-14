@@ -18,12 +18,22 @@ import java.time.Duration;
  * =====================================================================================
  * FILE: product-service/.../config/RedisConfig.java
  * MODULE: product-service (Product Catalog & Category Microservice)
- * PURPOSE: Configures Spring Cache abstraction with Redis as the distributed read-through cache.
+ * WHAT DOES THIS CONFIGURATION DO AND KEY DESIGN DECISIONS:
+ * -------------------------------------------------------------------------------------
+ * Configures Spring's `@Cacheable` abstraction with Redis as the distributed cache.
  *
- * DESIGN PATTERN / ARCHITECTURAL CONCEPT:
- * - Cache-Aside / Read-Through Pattern (`@Cacheable`, `@CacheEvict`).
- * - Tiered Time-To-Live (TTL): Categories (infrequent changes) get longer TTL (60 min),
- *   while individual product details get a 10-minute TTL.
+ * KEY DESIGN CHOICES:
+ * 1. JSON SERIALIZATION (GenericJackson2JsonRedisSerializer):
+ *    Instead of Java's native binary serialization (which is fragile, vulnerable to RCE,
+ *    and unreadable in Redis CLI), we serialize cache values as clean JSON.
+ *
+ * 2. TIERED TIME-TO-LIVE (TTL):
+ *    - Products: 10 minutes (balances freshness with fast response times).
+ *    - Categories: 60 minutes (categories rarely change, so longer caching is safe).
+ *
+ * 3. NO NULL CACHING:
+ *    `.disableCachingNullValues()` prevents non-existent product lookups from filling up
+ *    Redis RAM with empty keys.
  *
  * READING ORDER:
  * - Read PREVIOUS: utils/GenericResponse.java

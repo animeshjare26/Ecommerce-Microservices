@@ -19,17 +19,27 @@ import java.util.Base64;
 
 /**
  * =====================================================================================
- * FILE: RsaKeyProvider.java
+ * FILE: user-service/.../security/jwt/RsaKeyProvider.java
  * MODULE: user-service (Security Core)
- * PURPOSE: Loads, parses, and provides RSA 2048-bit Asymmetric Keys (Private & Public)
- *          from PEM files for cryptographic RS256 token signing and verification.
  *
- * DESIGN PATTERN: Provider / Factory Pattern (Thread-Safe Immutable Key Holder).
+ * WHAT DOES THIS CLASS DO AND WHY DO WE NEED IT?
+ * -------------------------------------------------------------------------------------
+ * Loads and parses our RSA 2048-bit Asymmetric Keys from PEM files on startup:
+ * 1. PRIVATE KEY (`private_key.pem` in PKCS#8 format):
+ *    Kept strictly secret inside `user-service`. Used by `JwtUtils` to cryptographically
+ *    SIGN access tokens when users log in.
  *
- * EXECUTION FLOW POSITION:
- * - Step 1: Initialized on application startup via `@PostConstruct`.
- * - Step 2: Injected into `JwtUtils` to supply the `RSAPrivateKey` for signing access tokens.
- * - Step 3: Injected into `PublicKeyController` to expose the `RSAPublicKey` to verifiers.
+ * 2. PUBLIC KEY (`public_key.pem` in X.509 format):
+ *    Used to verify signatures. Also exposed via `/api/auth/public-key` for the API Gateway
+ *    or verifiers if needed.
+ *
+ * WHY RS256 (ASYMMETRIC) OVER HS256 (SYMMETRIC)?
+ * -------------------------------------------------------------------------------------
+ * With symmetric HMAC (HS256), the same secret key is shared with everyone who verifies tokens.
+ * If the Gateway or another service is compromised, attackers get the key and can forge admin tokens.
+ *
+ * With RS256, ONLY `user-service` has the Private Key to sign tokens. The Gateway only needs the
+ * Public Key, so it can verify tokens without having any power to forge them.
  *
  * READING ORDER:
  * - Read PREVIOUS: JwtConfig.java

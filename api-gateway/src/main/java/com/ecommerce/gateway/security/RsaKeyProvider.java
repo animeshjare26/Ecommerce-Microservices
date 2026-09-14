@@ -19,14 +19,28 @@ import java.util.Base64;
  * =====================================================================================
  * FILE: RsaKeyProvider.java
  * MODULE: api-gateway (Security Core)
- * PURPOSE: Loads and parses the RSA 2048-bit Public Key (X.509 format) from PEM files.
- *          Supplies the public key to JwtAuthenticationFilter for edge verification.
  *
- * DESIGN PATTERN: Provider / Factory Pattern (Immutable Key Holder).
+ * WHAT DOES THIS CLASS DO AND WHY DO WE NEED IT?
+ * -------------------------------------------------------------------------------------
+ * Loads our RSA 2048-bit Public Key from `certs/public_key.pem` on application startup
+ * and caches it in memory as a Java `PublicKey` object.
  *
- * EXECUTION FLOW POSITION:
- * - Step 1: Initialized on gateway bootup via `@PostConstruct`.
- * - Step 2: Injected into `JwtAuthenticationFilter` to cryptographically verify token signatures.
+ * WHY DOES THE GATEWAY ONLY HAVE THE PUBLIC KEY?
+ * -------------------------------------------------------------------------------------
+ * We use asymmetric cryptography (RS256):
+ * - `user-service` holds the PRIVATE key to SIGN tokens when users log in.
+ * - `api-gateway` holds only the PUBLIC key to VERIFY signatures.
+ *
+ * Even if an attacker were to breach the Gateway, they CANNOT forge or create fake JWTs
+ * because they only have the public key!
+ *
+ * HOW DOES IT WORK?
+ * -------------------------------------------------------------------------------------
+ * 1. Reads `certs/public_key.pem` on startup via `@PostConstruct`.
+ * 2. Strips headers (`-----BEGIN PUBLIC KEY-----`, `-----END PUBLIC KEY-----`) and whitespace.
+ * 3. Base64-decodes the remaining key string into raw bytes.
+ * 4. Passes bytes into Java's `KeyFactory.getInstance("RSA").generatePublic(...)`.
+ * 5. Supplies the parsed key to `JwtAuthenticationFilter` for fast (<0.1ms) token verification.
  *
  * READING ORDER:
  * - Read PREVIOUS: resources/certs/public_key.pem
@@ -58,7 +72,7 @@ public class RsaKeyProvider {
 
     private final ResourceLoader resourceLoader;
 
-    @Value("${jwt.rsa.public-key-path:classpath:certs/public_key.pem}")
+    @Value("${jwt.rsa.public-key-path}")
     private String publicKeyPath;
 
     @Getter

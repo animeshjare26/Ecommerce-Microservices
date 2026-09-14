@@ -17,12 +17,24 @@ import java.util.Optional;
  * FILE: product-service/.../repository/ProductRepository.java
  * MODULE: product-service (Product Catalog & Category Microservice)
  * PURPOSE: High-performance Spring Data JPA repository for Product entities.
+ * WHAT DOES THIS REPOSITORY DO AND KEY QUERY MECHANISMS:
+ * -------------------------------------------------------------------------------------
+ * High-performance Spring Data JPA repository for Product catalog querying.
  *
- * DESIGN PATTERN / ARCHITECTURAL CONCEPT:
- * - Entity Graph Pattern (`@EntityGraph`): Completely eliminates Hibernate's N+1 query problem
- *   by generating an eager SQL `LEFT OUTER JOIN categories` in a single round-trip.
- * - Dynamic Projection & Composite Querying: Enables full-text keyword matching, price range
- *   filtering, and category filtering while leveraging PostgreSQL B-Tree composite indexes.
+ * KEY QUERY MECHANISMS:
+ * 1. `@EntityGraph` PREVENTS N+1 QUERIES:
+ *    When querying products, we need the Category name/slug. By default, Hibernate would run
+ *    1 query to fetch products, and then 20 separate queries to fetch each product's category!
+ *    With `@EntityGraph(attributePaths = {"category"})`, Hibernate generates a single SQL
+ *    `LEFT OUTER JOIN categories` in one database round-trip.
+ *
+ * 2. COMPOSITE INDEXED SEARCH:
+ *    `searchProducts(...)` matches keywords against name/description and filters by price.
+ *    The SQL query is optimized to hit our PostgreSQL composite B-Tree indexes.
+ *
+ * 3. PAGINATION & SORTING:
+ *    All multi-item queries accept Spring Data `Pageable` to ensure SQL LIMIT & OFFSET
+ *    are applied directly at the database level, preventing high memory usage.
  *
  * READING ORDER:
  * - Read PREVIOUS: repository/CategoryRepository.java

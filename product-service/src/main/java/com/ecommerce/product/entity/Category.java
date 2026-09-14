@@ -25,11 +25,24 @@ import java.util.List;
  * =====================================================================================
  * FILE: product-service/.../entity/Category.java
  * MODULE: product-service (Product Catalog & Category Microservice)
- * PURPOSE: JPA Entity representing a hierarchical product category (e.g., Electronics).
  *
- * DESIGN PATTERN / ARCHITECTURAL CONCEPT:
- * - Domain Model Pattern: Encapsulates state and behavior for catalog categories.
- * - One-to-Many Relationship: Mapped with `FetchType.LAZY` to prevent N+1 query traps.
+ * WHAT IS THIS ENTITY AND KEY DESIGN DECISIONS:
+ * -------------------------------------------------------------------------------------
+ * Represents a product category (e.g., Electronics, Fashion, Books).
+ *
+ * KEY ARCHITECTURAL CHOICES:
+ * 1. `@Getter` AND `@Setter` INSTEAD OF `@Data`:
+ *    We avoid Lombok's `@Data` on JPA entities because it auto-generates `equals()`,
+ *    `hashCode()`, and `toString()`. When entities have relationships, `@Data` can cause
+ *    infinite recursion and a fatal `StackOverflowError`.
+ *
+ * 2. SOFT DELETION (`is_active`):
+ *    Deactivating a category sets `isActive = false` rather than deleting rows, preventing
+ *    foreign key integrity violations with existing products.
+ *
+ * 3. AUDITING (`BaseAuditEntity`):
+ *    Inherits audit fields (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`) from
+ *    `BaseAuditEntity` for consistent enterprise tracing.
  *
  * READING ORDER:
  * - Read PREVIOUS: enums/StockStatus.java

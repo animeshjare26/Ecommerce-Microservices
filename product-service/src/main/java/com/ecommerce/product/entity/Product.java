@@ -24,13 +24,29 @@ import java.math.BigDecimal;
  * =====================================================================================
  * FILE: product-service/.../entity/Product.java
  * MODULE: product-service (Product Catalog & Category Microservice)
- * PURPOSE: JPA Entity representing an individual product item in the catalog.
  *
- * DESIGN PATTERN / ARCHITECTURAL CONCEPT:
- * - Domain Model Pattern: Encapsulates catalog properties and stock status invariants.
- * - Soft Delete Pattern: `active = false` preserves referential history in past orders.
- * - Event Dampened Inventory Snapshot: `stockStatus`, `stockQuantity`, and `lowStockThreshold`
- *   allow intelligent UI rendering without querying inventory service on every catalog search.
+ * WHAT IS THIS ENTITY AND KEY DESIGN DECISIONS:
+ * -------------------------------------------------------------------------------------
+ * Represents an individual product item in our catalog database.
+ *
+ * KEY ARCHITECTURAL CHOICES:
+ * 1. LAZY LOADING FOR CATEGORY (`FetchType.LAZY`):
+ *    In JPA, `@ManyToOne` defaults to EAGER loading. If you query 100 products with EAGER,
+ *    Hibernate executes 1 query for products + 100 separate queries for categories (N+1 problem)!
+ *    We set `FetchType.LAZY` and use `@EntityGraph` in `ProductRepository` to join Category
+ *    in 1 single query only when needed.
+ *
+ * 2. LONG FOR QUANTITY & THRESHOLD:
+ *    We use `Long` (Postgres `BIGINT`) instead of Integer so stock counting never suffers
+ *    from 32-bit signed integer overflow in large inventory warehouses.
+ *
+ * 3. SOFT DELETION (`is_active`):
+ *    When a seller removes a product, we set `isActive = false` rather than hard-deleting the row.
+ *    This preserves historical purchase data and order line items.
+ *
+ * 4. AUDITING (`BaseAuditEntity`):
+ *    Extends `BaseAuditEntity` to automatically record `createdAt`, `updatedAt`, `createdBy`,
+ *    and `updatedBy`.
  *
  * READING ORDER:
  * - Read PREVIOUS: entity/Category.java

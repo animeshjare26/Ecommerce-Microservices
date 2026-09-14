@@ -45,6 +45,12 @@ import java.io.IOException;
  *      * Attaches user ID to HttpServletRequest attributes (`request.setAttribute("user-id", id)`).
  * 4. Calls `filterChain.doFilter(request, response)` to pass the request to the next filter.
  * 
+ * THREAD SAFETY AND EXCEPTION HANDLING:
+ * - Thread Safety: Spring Security stores authentication in `SecurityContextHolder` using ThreadLocal.
+ *   Each request thread has its own isolated context, automatically cleaned up when the request finishes.
+ * - Exceptions: Filter errors are routed to `HandlerExceptionResolver` so `@RestControllerAdvice`
+ *   can format them into clean JSON responses.
+ *
  * READING ORDER:
  * - Read PREVIOUS: SecurityConfiguration.java
  * - Read THIS FILE: Understand how authentication context is established per request.
@@ -62,8 +68,7 @@ import java.io.IOException;
  * A2: Regular servlet filters run outside of Spring MVC's DispatcherServlet. If an exception 
  *     is thrown inside a filter, Spring's `@RestControllerAdvice` cannot catch it by default. 
  *     By autowiring `HandlerExceptionResolver` and calling `resolveException(request, response, null, e)`, 
- *     we give MVC exception resolvers an opportunity to format filter errors. Security failures handled
- *     by Spring Security's entry points or access-denied handlers still bypass controller advice.
+ *     we give MVC exception resolvers an opportunity to format filter errors.
  * =====================================================================================
  */
 // Registers this class as a Spring-managed singleton component bean

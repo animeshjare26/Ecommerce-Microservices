@@ -33,22 +33,37 @@ import java.util.List;
  * =====================================================================================
  * FILE: JwtAuthenticationFilter.java
  * MODULE: api-gateway (Reactive Edge Security Filter)
- * PURPOSE: Global Reactive Filter validating incoming RS256 JWT tokens, enforcing Redis
- *          JTI revocation checks, and injecting downstream identity headers (`X-User-Id`).
  *
- * DESIGN PATTERN / SPRING MECHANISM:
- * - Reactive Filter Chain Pattern (`GlobalFilter`, Project Reactor `Mono<Void>`).
- * - Edge Authentication / Token Relay Pattern.
- * - Header Mutation Pattern (`exchange.getRequest().mutate().header(...)`).
+ * WHAT DOES THIS FILTER DO AND WHY DO WE NEED IT?
+ * -------------------------------------------------------------------------------------
+ * In our microservices architecture, this filter acts as the single security gate at the edge.
+ * Instead of forcing every downstream microservice (product-service, order-service, etc.)
+ * to parse JWT tokens and manage public keys, the API Gateway verifies the token ONCE:
  *
- * EXECUTION FLOW POSITION:
- * - Order: -1 (Executes right after CorrelationIdFilter and before routing to microservices).
- * - Step 1: Whitelist check (allows `/api/v1/auth/**` and public routes without token).
- * - Step 2: Extracts `Authorization: Bearer <jwt>`.
- * - Step 3: Verifies RS256 signature against `RSAPublicKey` in RAM (< 0.1ms).
- * - Step 4: Reactive non-blocking Redis check: is `blocklist:jti:{jti}` present?
- * - Step 5: Mutates request with `X-User-Id`, `X-User-Email`, `X-User-Roles` headers.
- * - Step 6: Calls `chain.filter(...)` to forward downstream.
+ *   [Client Browser / Mobile App]
+ *              │  (Authorization: Bearer <token>)
+ *              ▼
+ *     ┌──────────────────┐
+ *     │   API GATEWAY    │  1. Check public whitelist (skip login, signup, catalog browse)
+ *     │  (This Filter)   │  2. Verify RS256 signature in-memory using RSA Public Key (<0.1ms)
+ *     │                  │  3. Check Redis: Is this token revoked/logged out?
+ *     │                  │  4. Extract userId & roles -> inject into X-User-* headers
+ *     └────────┬─────────┘
+ *              │  (X-User-Id: 101, X-User-Roles: ROLE_SELLER)
+ *              ▼
+ *     ┌──────────────────┐
+ *     │ Downstream Svc   │  No JWT parsing needed! Simply reads X-User-Id
+ *     │ (product-service)│  via UserContext in 0.001ms.
+ *     └──────────────────┘
+ *
+ * HOW DOES IT PREVENT SECURITY SPOOFING?
+ * -------------------------------------------------------------------------------------
+ * If a malicious attacker manually adds "X-User-Id: 1" in their request, this filter's
+ * mutate() step OVERWRITES it with the genuine ID extracted from the verified cryptographic
+ * JWT. Untrusted client headers are completely sanitized.
+ *
+ * EXECUTION ORDER:
+ * - Runs with Order: -1 (immediately after CorrelationIdFilter, before downstream routing).
  *
  * READING ORDER:
  * - Read PREVIOUS: security/RsaKeyProvider.java
@@ -88,13 +103,13 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     // Whitelist of public endpoints that bypass JWT verification
     private static final List<String> PUBLIC_WHITELIST = List.of(
-            "/api/v1/auth/signup",
-            "/api/v1/auth/login",
-            "/api/v1/auth/refresh",
-            "/api/v1/auth/forgot-password",
-            "/api/v1/auth/reset-password",
-            "/api/v1/auth/email-exists",
-            "/api/v1/auth/public-key",
+            "/api/auth/signup",
+            "/api/auth/login",
+            "/api/auth/refresh",
+            "/api/auth/forgot-password",
+            "/api/auth/reset-password",
+            "/api/auth/email-exists",
+            "/api/auth/public-key",
             "/actuator"
     );
 
@@ -119,7 +134,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         // Step 2: Public GET Check for Product Catalog & Categories
         boolean isPublicCatalogGet = HttpMethod.GET.equals(method) &&
-                (path.startsWith("/api/v1/products") || path.startsWith("/api/v1/categories"));
+                (path.startsWith("/api/products") || path.startsWith("/api/categories"));
 
         if (isPublicCatalogGet && (authHeader == null || !authHeader.startsWith("Bearer "))) {
             log.debug("Public catalog GET on [{}]; bypassing authentication", path);

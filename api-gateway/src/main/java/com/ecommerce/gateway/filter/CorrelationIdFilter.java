@@ -15,19 +15,58 @@ import java.util.UUID;
  * =====================================================================================
  * FILE: CorrelationIdFilter.java
  * MODULE: api-gateway (Distributed Tracing Filter)
- * PURPOSE: Inspects incoming HTTP requests for an `X-Correlation-Id` header.
- *          If absent, generates a new random UUID. Injects the correlation ID into both
- *          the downstream request headers and the HTTP client response headers.
  *
- * DESIGN PATTERN / ARCHITECTURAL MECHANISM:
- * - Correlation Identifier Pattern (Enterprise Integration Patterns).
- * - Distributed Tracing Foundation: Unifies log traces across microservices.
+ * WHAT IS A CORRELATION ID AND WHY DO WE NEED IT?
+ * -------------------------------------------------------------------------------------
+ * In a monolith, debugging is easy: all logs are in one file on one server.
+ * In microservices, a single user action (e.g. clicking "Place Order") triggers a chain
+ * of calls across multiple independent servers:
  *
- * EXECUTION FLOW POSITION:
- * - Order: `Ordered.HIGHEST_PRECEDENCE` (Runs first before all other filters).
- * - Step 1: Reads `X-Correlation-Id`.
- * - Step 2: Injects into request headers (`X-Correlation-Id: abc-123`).
- * - Step 3: Adds callback to append `X-Correlation-Id` into client response headers.
+ *   User Click
+ *       │
+ *       ▼
+ *   [API Gateway] ──► [Order Service] ──► [Inventory Service] ──► [Payment Service]
+ *
+ * At peak traffic, servers generate MILLIONS of log lines every minute.
+ * If an order fails with a generic "500 Internal Server Error", searching by timestamp
+ * is useless because thousands of requests happen in the exact same millisecond.
+ * Finding which log line in Payment Service belongs to user #123 is like finding a
+ * needle in a haystack.
+ *
+ * HOW DOES THIS FILTER SOLVE THE PROBLEM?
+ * -------------------------------------------------------------------------------------
+ * 1. GENERATE OR PRESERVE A UNIQUE ID:
+ *    When a request hits the Gateway, this filter checks for an `X-Correlation-Id` header.
+ *    If missing, it generates a fresh UUID (e.g., `abc-123`).
+ *
+ * 2. PASS DOWNSTREAM TO ALL MICROSERVICES:
+ *    It injects `X-Correlation-Id: abc-123` into the HTTP request headers sent to downstream
+ *    services (user-service, product-service, order-service, etc.).
+ *    Every downstream service logs this ID alongside every log statement.
+ *
+ * 3. ECHO BACK TO CLIENT IN HTTP RESPONSE:
+ *    It attaches `X-Correlation-Id: abc-123` to the response header sent back to the browser/app.
+ *
+ * REAL-WORLD BENEFITS:
+ * -------------------------------------------------------------------------------------
+ * A) ONE-QUERY DISTRIBUTED DEBUGGING:
+ *    In log aggregators (ELK, Splunk, Grafana Loki, CloudWatch), you simply query:
+ *       correlationId = "abc-123"
+ *    You immediately see the entire sequential journey of that specific request:
+ *       [Gateway]           INFO: Ingress POST /api/orders [X-Correlation-Id: abc-123]
+ *       [Order-Service]     INFO: Creating order #5002 [X-Correlation-Id: abc-123]
+ *       [Inventory-Service] INFO: Reserved stock for SKU-LAPTOP [X-Correlation-Id: abc-123]
+ *       [Payment-Service]   ERROR: Card declined: Insufficient funds [X-Correlation-Id: abc-123]
+ *       [Order-Service]     WARN: Rolling back order #5002 [X-Correlation-Id: abc-123]
+ *    Root cause discovered in 10 seconds!
+ *
+ * B) INSTANT CUSTOMER SUPPORT:
+ *    If an error occurs, the frontend displays: "Something went wrong. Ref ID: abc-123".
+ *    The customer gives that ID to support, and developers find the exact error instantly.
+ *
+ * EXECUTION ORDER:
+ * - Runs with `Ordered.HIGHEST_PRECEDENCE` (first filter) so every subsequent filter
+ *   and log statement has access to this correlation ID.
  *
  * READING ORDER:
  * - Read PREVIOUS: filter/JwtAuthenticationFilter.java
@@ -37,17 +76,15 @@ import java.util.UUID;
  * TRICKY INTERVIEW QUESTIONS & ARCHITECTURAL WISDOM:
  * Q1: Senior Question: Why is a Correlation ID essential in a microservices ecosystem?
  * A1: Without a correlation ID, debugging a failed user checkout is impossible.
- *     A single click on "Place Order" spans 5 microservices (`Gateway` -> `Order` -> `Inventory` -> `Payment` -> `Notification`).
- *     If payment fails, searching through millions of log lines across 5 separate servers
- *     is needle-in-a-haystack work. By tagging all log statements with `X-Correlation-Id`,
- *     engineers can query Splunk / ELK / Grafana Loki: `correlationId="abc-123"` and view the
- *     exact end-to-end distributed story in sequential order!
+ *     A single click on "Place Order" spans multiple microservices (`Gateway` -> `Order` -> `Inventory` -> `Payment`).
+ *     Searching through millions of log lines across separate servers is needle-in-a-haystack work.
+ *     By tagging all log statements with `X-Correlation-Id`, engineers can query log aggregators
+ *     with `correlationId="abc-123"` and view the exact end-to-end distributed story in sequential order!
  *
  * Q2: Intermediate Question: Why do we also write `X-Correlation-Id` back to the HTTP response header?
  * A2: Client-side observability! When a customer encounters an error ("Something went wrong"),
- *     the frontend React app displays: *"Error Reference: abc-123"*.
- *     When the user contacts customer support, the support team looks up that reference ID in
- *     the server logs to instantly identify the root cause!
+ *     the frontend displays: *"Error Reference: abc-123"*. When the user contacts customer support,
+ *     the support team looks up that reference ID in the server logs to instantly identify the root cause!
  *
  * Q3: Beginner Intern Question: What is the difference between a `TraceId` and a `CorrelationId`?
  * A3: In OpenTelemetry / Micrometer Tracing, a `TraceId` identifies the entire end-to-end journey,

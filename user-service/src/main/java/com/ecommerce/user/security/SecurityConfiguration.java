@@ -47,11 +47,27 @@ import java.util.List;
  *    commences and returns a clean HTTP 401 JSON error without touching any Controller.
  * 7. If authentication passes, DispatcherServlet routes the request to your `@RestController`.
  * 
+ * KEY SECURITY DECISIONS EXPLAINED:
+ * -------------------------------------------------------------------------------------
+ * 1. STATELESS SESSIONS (`SessionCreationPolicy.STATELESS`):
+ *    No server-side HTTP sessions or JSESSIONID cookies in memory. Each request presents
+ *    a self-contained JWT, allowing microservices to scale horizontally across any number
+ *    of instances without sticky sessions.
+ *
+ * 2. CSRF DISABLED:
+ *    CSRF attacks rely on browsers automatically sending session cookies with cross-site requests.
+ *    Because this API uses explicit `Authorization: Bearer <token>` headers instead of cookies,
+ *    browsers will not attach credentials automatically, making CSRF protection redundant.
+ *
+ * 3. BCRYPT PASSWORD ENCRYPTION:
+ *    Uses adaptive slow hashing (BCrypt work factor 12) with salted hashes, making brute-force
+ *    and rainbow-table attacks computationally infeasible.
+ *
  * READING ORDER:
  * - Read PREVIOUS: application.yml (JWT secrets & expiration)
  * - Read THIS FILE: Understand how security rules are wired.
  * - Read NEXT: AuthTokenFilter.java (how tokens are inspected), JwtUtils.java
- * 
+ *
  * TRICKY INTERVIEW QUESTIONS & ARCHITECTURAL WISDOM:
  * Q1: What is "Stateless Architecture" in Spring Security and why is it essential for Microservices?
  * A1: In traditional stateful web apps, the server creates an `HttpSession` in RAM for every user 
@@ -67,18 +83,16 @@ import java.util.List;
  *     (session cookies) to cross-origin requests. In our stateless REST architecture, we do not use 
  *     cookies. Clients must explicitly attach the JWT in the `Authorization: Bearer <token>` header. 
  *     Browsers do not automatically attach an Authorization header to cross-site form submissions.
- *     Therefore CSRF protection is normally unnecessary only while this API remains bearer-header based
- *     and does not adopt cookie-based authentication; it is not a universal guarantee.
+ *     Therefore CSRF protection is redundant in bearer-token REST APIs.
  * 
  * Q3: How does BCrypt work and why is it better than SHA-256 or MD5 for passwords?
- * A3: Fast hashing algorithms like SHA-256 or MD5 are designed for high throughput (checksumming gigabytes). 
- *     An attacker with a modern GPU can compute billions of SHA-256 hashes per second to crack passwords. 
+ * A3: Fast hashing algorithms like SHA-256 or MD5 are designed for high throughput. An attacker
+ *     with a modern GPU can compute billions of SHA-256 hashes per second to crack passwords. 
  *     BCrypt is intentionally SLOW (adaptive work factor). With strength 12, it computes 2^12 = 4,096 rounds 
  *     of hashing with an embedded 128-bit cryptographically secure random salt. This makes brute-force 
  *     and rainbow-table attacks computationally prohibitive.
- * 
  * =====================================================================================
- * SPRING ANNOTATIONS MASTERCLASS: HOW THEY WORK & HOW THEY DIFFER
+ * SPRING ANNOTATIONS EXPLAINED:
  * =====================================================================================
  * 1. @Configuration vs @Component:
  *    - BOTH register beans in the Spring ApplicationContext.
