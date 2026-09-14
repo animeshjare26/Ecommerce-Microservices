@@ -16,6 +16,8 @@ public interface UserService {
 
     UserResponseDto createUser(SignUpRequestDto request);
 
+    java.util.List<UserResponseDto> getAllUsers();
+
     UserResponseDto getUserById(Long id);
 
     UserResponseDto getUserByEmail(String email);

@@ -81,6 +81,15 @@ public class UserController {
         return ResponseEntity.ok(GenericResponse.success(userProfile));
     }
 
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all active users (ADMIN role required)")
+    public ResponseEntity<GenericResponse<java.util.List<UserResponseDto>>> getAllUsers() {
+        log.info("Admin request to fetch all active users");
+        java.util.List<UserResponseDto> users = userService.getAllUsers();
+        return ResponseEntity.ok(GenericResponse.success(users, "Active users retrieved successfully"));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get user details by ID (ADMIN role required)")

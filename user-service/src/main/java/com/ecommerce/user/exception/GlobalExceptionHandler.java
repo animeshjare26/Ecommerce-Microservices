@@ -67,9 +67,16 @@ public class GlobalExceptionHandler {
     /**
      * Handles invalid login credentials with HTTP 401 Unauthorized.
      */
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<GenericResponse<Object>> handleBadCredentials(BadCredentialsException ex) {
-        log.warn("Authentication failed: Incorrect email or password");
+    /**
+     * Handles invalid login credentials, unknown username, or authentication provider failure with HTTP 401 Unauthorized.
+     */
+    @ExceptionHandler({
+            BadCredentialsException.class,
+            org.springframework.security.core.userdetails.UsernameNotFoundException.class,
+            org.springframework.security.authentication.InternalAuthenticationServiceException.class
+    })
+    public ResponseEntity<GenericResponse<Object>> handleBadCredentials(Exception ex) {
+        log.warn("Authentication failed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(GenericResponse.error(null, "Incorrect email or password"));
     }
@@ -111,6 +118,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<GenericResponse<Object>> handleGenericException(Exception ex) {
         log.error("Unhandled internal server error: ", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(GenericResponse.error(null, "An unexpected server error occurred. Please try again later."));
+                .body(GenericResponse.error(null, ex.getClass().getSimpleName() + ": " + ex.getMessage()));
     }
 }

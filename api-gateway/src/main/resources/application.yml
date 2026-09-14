@@ -56,6 +56,10 @@ spring:
         locator:
           enabled: false # We define explicit declarative routes below for strict security
 
+      # Edge Deduplication for CORS Headers (Protects against CORS Duplication Bug)
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+
       # Declarative Route Table
       routes:
         # 1. Public Authentication Routes (Sign up, Login, Refresh, Password Reset)

@@ -71,5 +71,20 @@ The project aims to follow four learning rules; foundational classes currently c
 
 ---
 
+## 💻 Web App & Microservices Dev Console (`frontend/`)
+A commercial SaaS-grade web frontend and interactive testing console built with **React 18** and **Vite**:
+- **Storefront Experience:** Public catalog browsing, live debounced search, category filtering, and event-dampened stock status badges.
+- **Merchant Console:** Catalog and inventory management (create/edit/delete products and categories with instant validation).
+- **Interactive Dev HUD ("Postman Killer"):** Real-time Gateway traffic monitor (`X-Correlation-Id`, latency, headers, request/response payload), active JWT session claims, and 1-click token rotation.
+
+```bash
+# Launch Frontend (runs on http://localhost:5173 matching Gateway CORS)
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
 ## 🚀 Getting Started
 Check [IMPLEMENTATION_PLAN.md](file:///c:/Users/Animesh/Desktop/Ecommercce-Microservices/IMPLEMENTATION_PLAN.md) for local setup, Docker Compose configuration, and the step-by-step development roadmap.

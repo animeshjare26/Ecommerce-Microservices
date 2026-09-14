@@ -33,7 +33,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *     6. Invokes ApplicationRunner and CommandLineRunner beans.
  * =====================================================================================
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+    org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration.class
+})
 public class UserServiceApplication {
 
     public static void main(String[] args) {

@@ -101,6 +101,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    public java.util.List<UserResponseDto> getAllUsers() {
+        log.info("Fetching all active users");
+        return userRepository.findAllAndIsActiveTrue().stream()
+                .map(this::mapToUserResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public UserResponseDto getUserById(Long id) {
         User user = userRepository.findById(id)
                 .filter(User::getIsActive)

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -46,7 +47,7 @@ import java.util.List;
  * 6. If authentication fails or token is missing on protected endpoint, `AuthEntryPointJwt` 
  *    commences and returns a clean HTTP 401 JSON error without touching any Controller.
  * 7. If authentication passes, DispatcherServlet routes the request to your `@RestController`.
- * 
+ *
  * KEY SECURITY DECISIONS EXPLAINED:
  * -------------------------------------------------------------------------------------
  * 1. STATELESS SESSIONS (`SessionCreationPolicy.STATELESS`):
@@ -161,9 +162,9 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Step 1: Configure CORS (Cross-Origin Resource Sharing) using our custom source bean below
-                // This allows browsers running frontend apps on different ports (e.g. localhost:3000) to call this API
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // Step 1: Disable internal CORS in user-service because the API Gateway centrally owns edge CORS
+                // This permanently eliminates the browser CORS Duplication Bug!
+                .cors(AbstractHttpConfigurer::disable)
                 
                 // Step 2: Disable CSRF protection because this is a stateless REST API with Bearer tokens
                 .csrf(AbstractHttpConfigurer::disable)
@@ -243,13 +244,11 @@ public class SecurityConfiguration {
      * AuthenticationManager Bean.
      * This is the coordinator that actually processes authentication requests.
      * AuthServiceImpl calls `authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password))`.
-     * 
-     * @param authConfig Spring's AuthenticationConfiguration helper
      * @return the primary AuthenticationManager instance
      */
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
+    public AuthenticationManager authenticationManager() {
+        return new ProviderManager(authenticationProvider());
     }
 
     /**
